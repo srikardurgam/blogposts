@@ -1,5 +1,5 @@
-baseURL = "srikardatascience.netlify.app"
-title = "Your title"
+baseURL = "https://srikardatascience.netlify.app"
+title = "Data Analyst, Atlanta GA"
 theme = "hugo-theme-m10c"
 paginate = 5
 
