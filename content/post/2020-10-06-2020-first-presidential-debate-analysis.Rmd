@@ -37,7 +37,7 @@ presidential_debate <- read_csv("us_election_2020_1st_presidential_debate.csv",
             "Vice President Joe Biden"))))
 ```
 
-Lastly, becasue we are maily interested in understanding what the candidates are saying I decided to filter out all the columns with the host as the speaker (Chris Wallace). The I print out the first 5 columns in the dataset. 
+Lastly, because we are mainly interested in understanding what the candidates are saying I decided to filter out all the columns with the host as the speaker (Chris Wallace). Then I print out the first 5 columns in the dataset.
 
 ```{r message=FALSE, warning=FALSE}
 presidential_debate <- presidential_debate %>%
@@ -46,7 +46,7 @@ presidential_debate <- presidential_debate %>%
 head(presidential_debate)
 ```
 
-Initially my goal is to create a word cloud and then analyzse those words based on the sentiment. So at the end of this analysis we should have two word clouds(one for each candidate) and 4 charts that illustrate positve and negative words, given the context of the word. Because there were a lot of words I decided to only look at top 100 words used by each candidate. 
+Initially my goal is to create a word cloud and then analyze those words based on the sentiment. So at the end of this analysis we should have two word clouds(one for each candidate) and 4 charts that illustrate positive and negative words, given the context of the word. Because there were a lot of words I decided to only look at the top 100 words used by each candidate. 
 
 First up, its President Donald Trump!
 
