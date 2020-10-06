@@ -172,7 +172,7 @@ DJTSentiment %&gt;%      ggplot(aes(reorder(word,n),n , fill = sentiment)) +
                       facet_wrap(~ sentiment, scales = &quot;free_y&quot;) + 
                       labs(title = &quot;Top 10 Terms by Sentiment: President Donald Trump&quot;,
                          x = &quot;term&quot;, y = &quot;score&quot;)</code></pre>
-<p><img src="/post/2020-10-06-2020-first-presidential-debate-analysis_files/figure-html/unnamed-chunk-6-1.png" width="672" />
+<p><img src="/post/2020-10-06-first-presidetial-debate-analysis_files/figure-html/unnamed-chunk-6-1.png" width="672" />
 No suprised here, President Trump used his own name in a positive way which I think is very intersting. I think his use of vice in the negative terms probably refers to Vice President Joe Biden.</p>
 <pre class="r"><code>JoeSentiment &lt;- Joe %&gt;% inner_join(get_sentiments(&quot;bing&quot;), by = &quot;word&quot;) %&gt;%
                         group_by(sentiment) %&gt;%
@@ -185,7 +185,7 @@ JoeSentiment %&gt;%      ggplot(aes(reorder(word,n),n , fill = sentiment)) +
                       facet_wrap(~ sentiment, scales = &quot;free_y&quot;) + 
                       labs(title = &quot;Top 10 Terms by Sentiment: Vice President Joe Biden&quot;,
                          x = &quot;term&quot;, y = &quot;score&quot;)</code></pre>
-<p><img src="/post/2020-10-06-2020-first-presidential-debate-analysis_files/figure-html/unnamed-chunk-7-1.png" width="672" />
+<p><img src="/post/2020-10-06-first-presidetial-debate-analysis_files/figure-html/unnamed-chunk-7-1.png" width="672" />
 I am not really sure why the word vice is showing up on VP Biden’s speech as well but I think he is probably referring to VP Pence, but that is just speculation. Other than that we have the usual suspects here as well.</p>
 <p>In conclusion, I used text analytics techniques to analyze the first presidential debate. I will probably do the same for the remaining of the debates. Please be sure to vote in this years election to make your voices heard. Another metric we should look at in the next debate is who is spending the most time talking, we can then plot that against the alloted time for each candidate to see who speaking the most and are they going over their allotted time, this will also give us an idea of how well the debate moderator performed.</p>
 <p>Thank you for taking the time and reading my blog.</p>
