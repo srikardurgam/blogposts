@@ -10,9 +10,9 @@ tags:
   - tutorial
 ---
 
-My first blog post! If you don't know me already, Hello! My name is Srikar, I am a data analyst for an ISP in Atlanta, GA and currently in the middle of getting my business analytics and data science masters degree from Wake Forest. 
+My first blog post! If you don't know me already, hello! My name is Srikar. I am a data analyst for an ISP in Atlanta, GA and currently in the middle of getting my business analytics and data science masters degree from Wake Forest. 
 
-The purpose of this blog post isn't to nudge you in one way or another, but only to provide an analytical view of what the candidates are saying. Please treat my blog and skills as work in progress, I have been working with R for over a year now and I am still learning new things about it. I truly have a passion for data and love the ability to have an opportunity to tell a story using data. Feel free to use my git repository (links are coming soon) to conduct your analysis!.
+The purpose of this blog post isn't to nudge you in one way or another, but only to provide an analytical view of what the candidates are saying. Please treat my blog and skills as a work in progress, I have been working with R for over a year now and I am still learning new things about it. I truly have a passion for data and love the ability to have an opportunity to tell a story using data. Feel free to use my git repository (links are coming soon) to conduct your analysis!.
 
 First we are going to load our libraries. We have the usual suspects here for text analysis.
 ```{r Library, echo=TRUE, message=FALSE, warning=FALSE}
