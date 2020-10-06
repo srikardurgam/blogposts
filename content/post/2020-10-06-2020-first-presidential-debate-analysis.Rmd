@@ -28,6 +28,7 @@ library(stringr)
 
 I was able to find a simple data set with three columns(Speaker, time and test) in Kaggle, the same data set can be found  [here](https://www.kaggle.com/headsortails/us-election-2020-presidential-debates). 
 We then import the dataset. I also converted speaker column to factor data type to make it easier to model at a later time. I then check for the structure of the data using the str command to see if I sucessfully converted the speaker column to the factor data type. 
+
 ```{r message=FALSE, warning=FALSE}
 presidential_debate <- read_csv("us_election_2020_1st_presidential_debate.csv", 
     col_types = cols(minute = col_skip(), 
@@ -37,6 +38,7 @@ presidential_debate <- read_csv("us_election_2020_1st_presidential_debate.csv",
 ```
 
 Lastly, becasue we are maily interested in understanding what the candidates are saying I decided to filter out all the columns with the host as the speaker (Chris Wallace). The I print out the first 5 columns in the dataset. 
+
 ```{r message=FALSE, warning=FALSE}
 presidential_debate <- presidential_debate %>%
                        filter(!speaker %in% c('Chris Wallace'))
@@ -47,6 +49,7 @@ head(presidential_debate)
 Initially my goal is to create a word cloud and then analyzse those words based on the sentiment. So at the end of this analysis we should have two word clouds(one for each candidate) and 4 charts that illustrate positve and negative words, given the context of the word. Because there were a lot of words I decided to only look at top 100 words used by each candidate. 
 
 First up, its President Donald Trump!
+
 ```{r message=FALSE, warning=FALSE}
 DJT <- presidential_debate %>% 
        unnest_tokens(word, "text", token = "ngrams", n =1) %>%
@@ -59,6 +62,7 @@ DJT <- presidential_debate %>%
 
 DJT %>% wordcloud2()
 ```
+
 His most frequent word during the first debate was "people". The "crosstalk" we see here is then interrupting each other, I am sure this will show up in the Joe Biden word cloud as well. We can see that President Trump spoke a lot about VP Joe Biden, the left, the ballot/ballots, the country, the military, Obamacare and the forest. After this initial view I think there is some words we need to filter like the words, "don't, it's, you've, you're ". etc
 
 ```{r message=FALSE, warning=FALSE}
@@ -76,6 +80,7 @@ DJT <- presidential_debate %>%
 
 DJT %>% wordcloud2()
 ```
+
 
 I think the second wordcloud is a lot more cleaner and also conveys some of the important topics that President Trump discussed during this debate. 
 
@@ -95,6 +100,7 @@ Joe <- presidential_debate %>%
 
 Joe %>% wordcloud2()
 ```
+
 Looks like the word "people" seems to be a popular one amongst the both candididates. Joe Biden also talked about healthcare, police, vaccine, president(refering to President. Trump I'd assume) One word that was mentioned in BP Bidens wordcloud and not in Preisdent Trump wordcloud is Covid. President Trump does mention China. 
 
 Now onto Sentiment, lets look at words that both candidates used in postive and negative connotation.
@@ -114,6 +120,7 @@ DJTSentiment %>%      ggplot(aes(reorder(word,n),n , fill = sentiment)) +
                       labs(title = "Top 10 Terms by Sentiment: President Donald Trump",
                          x = "term", y = "score")
 ```
+
 No suprised here, President Trump used his own name in a positive way which I think is very intersting. I think his use of vice in the negative terms probably refers to Vice President Joe Biden. 
 
 ```{r message=FALSE, warning=FALSE}
@@ -129,6 +136,7 @@ JoeSentiment %>%      ggplot(aes(reorder(word,n),n , fill = sentiment)) +
                       labs(title = "Top 10 Terms by Sentiment: Vice President Joe Biden",
                          x = "term", y = "score")
 ```
+
 I am not really sure why the word vice is showing up on VP Biden's speech as well but I think he is probably referring to VP Pence, but that is just speculation. Other than that we have the usual suspects here as well.
 
 In conclusion, I used text analytics techniques to analyze the first presidential debate. I will probably do the same for the remaining of the debates. Please be sure to vote in this years election to make your voices heard. Another metric we should look at in the next debate is who is spending the most time talking, we can then plot that against the alloted time for each candidate to see who speaking the most and are they going over their allotted time, this will also give us an idea of how well the debate moderator performed. 
