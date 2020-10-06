@@ -101,7 +101,7 @@ Joe <- presidential_debate %>%
 Joe %>% wordcloud2()
 ```
 
-Looks like the word "people" seems to be a popular one amongst the both candididates. Joe Biden also talked about healthcare, police, vaccine, president(refering to President. Trump I'd assume) One word that was mentioned in BP Bidens wordcloud and not in Preisdent Trump wordcloud is Covid. President Trump does mention China. 
+Looks like the word "people'' seems to be a popular one amongst the both candidates. Joe Biden also talked about healthcare, police, vaccines, president(referring to President Trump I'd assume). One word that was mentioned in VP Biden's word cloud and not in President Trump word cloud is Covid. President Trump does mention China.
 
 Now onto Sentiment, lets look at words that both candidates used in postive and negative connotation.
 
