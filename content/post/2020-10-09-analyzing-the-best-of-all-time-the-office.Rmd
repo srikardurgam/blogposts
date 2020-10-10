@@ -1,5 +1,5 @@
 ---
-title: 'Analyzing the best of all time: The Office'
+title: 'Analyzing the best show of all time: The Office'
 author: Srikar Durgam
 date: '2020-10-09'
 slug: analyzing-the-best-of-all-time-the-office
