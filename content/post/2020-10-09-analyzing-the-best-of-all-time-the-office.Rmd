@@ -2,7 +2,7 @@
 title: 'Analyzing the best show of all time: The Office'
 author: Srikar Durgam
 date: '2020-10-09'
-slug: analyzing-the-best-of-all-time-the-office
+slug: analyzing-the-best-show-of-all-time-the-office
 categories: []
 tags:
   - Office
