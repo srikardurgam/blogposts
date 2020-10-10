@@ -1,8 +1,8 @@
 ---
-title: 'Analyzing the best of all time: The Office'
+title: 'Analyzing the best show of all time: The Office'
 author: Srikar Durgam
 date: '2020-10-09'
-slug: analyzing-the-best-of-all-time-the-office
+slug: analyzing-the-best-show-of-all-time-the-office
 categories: []
 tags:
   - Office
@@ -118,7 +118,7 @@ The banker episode wasn't that bad in my opinion; it was just a compilation of a
 
 My favorite episode is the diwali episode and diversity day, so I wanted to know how those compared to the remainder of the episodes. I will create a scatter plot and as well as a heatmap. 
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 heatmap <- ggplot(ratings, aes(season, episode, fill = imdb_rating)) + 
   geom_tile(colour = "white") + 
   scale_fill_viridis(option="magma") +
@@ -130,7 +130,7 @@ ggplotly(heatmap)
 
 For the heat map the lighter the color, the higher the rating. 
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 scatterplot <- ggplot(ratings, aes(x=air_date, y=imdb_rating, color=as.factor(season), text=title)) + 
       geom_point() + 
       guides(color=FALSE) +
@@ -142,14 +142,14 @@ ggplotly(scatterplot)
 
 Last but not least let's look at how many times did Micheal Scott say "That's what she said".
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 OfficeSentences <- tokenize_sentences(transcripts$text) # tokenizing all sentences
 OfficeSentences <- lower_string <- tolower(OfficeSentences) # changing everything to lower case
 transcripts <- cbind(transcripts, OfficeSentences) #adding sentences back to the orginal dataset
 TWSS <- transcripts[grep("that's what she said", transcripts$OfficeSentences), ] #searching for Thats what she said
 ```
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 TWSS_Count <- TWSS %>%
               group_by(season) %>%
               summarise(Count=n())
@@ -162,7 +162,7 @@ ggplot(TWSS_Count, aes(season, Count)) +
 ```
 Season 4 has the highest "That's what she said count"!. Lets see which character says it the most(I already have a hunch who is it, but let's let the data to the talking here)
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 TWSS_Count_character <- TWSS %>%
                         group_by(character) %>%
                         summarise(Count=n()) %>%
@@ -177,3 +177,4 @@ ggplot(TWSS_Count_character, aes(character, Count)) +
 
 Micheal Scott said "that's what she said" the most times. I was surprised to see Creed and David here. While I was doing this analysis, the search terms took forever. I have never searched for a phrase so this was a good learning experience. If there is any other better way for me to have done this please let me know. Lastly, I wanted to thank everyone that read my blog and gave me feedback. It is much appreciated. I plan on doing at least one blog every two weeks or so please come back! I am working on setting up a contact page as well so it will be easier to get in touch with me!
 See you guys on the next one.
+
