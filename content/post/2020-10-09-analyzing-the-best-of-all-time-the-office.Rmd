@@ -15,7 +15,7 @@ tags:
   - Schrute Farms
   - tutorial
 ---
-In this blogpost I will be analyzing A popular American show called The Office. The Office aired from March 2005 to May 2013. It has a total of 9 seasons and 201 shows and all streaming now on Netflix. A note to all hardcore office fan the entire library is going to leave the netflix platform in Jan 2021 and will make its debut on [NBC's own streaming platform](https://www.vox.com/culture/2019/6/26/18759675/office-leaving-netflix-nbcuniversal-2021). In this analysis I am going to look at the IMDB ratings and as well as conduct some text analysis. Last but not least, I wanted to know how many times Micheal Scott said "That's what she said". 
+In this blogpost I will be analyzing a popular American show called The Office. The Office aired from March 2005 to May 2013. It has a total of 9 seasons and 201 shows and all streaming now on Netflix. A note to all hardcore office fan the entire library is going to leave the netflix platform in Jan 2021 and will make its debut on [NBC's own streaming platform](https://www.vox.com/culture/2019/6/26/18759675/office-leaving-netflix-nbcuniversal-2021). In this analysis I am going to look at the IMDB ratings and as well as conduct some text analysis. Last but not least, I wanted to know how many times Micheal Scott said "That's what she said". 
 
 This dataset comes from the tidytuesday weekly project organized by the folks at R-Studio. It's great to practice your R skills and learn new data analysis techniques in R. As always first, let's load in the packages we need. 
 ```{r message=FALSE, warning=FALSE}
