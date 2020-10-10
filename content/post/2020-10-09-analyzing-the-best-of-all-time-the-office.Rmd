@@ -1,0 +1,179 @@
+---
+title: 'Analyzing the best of all time: The Office'
+author: Srikar Durgam
+date: '2020-10-09'
+slug: analyzing-the-best-of-all-time-the-office
+categories: []
+tags:
+  - Office
+  - Steve Carell
+  - The Office
+  - Michael Scott
+  - Jim Halpert
+  - Pam Beesly
+  - Dwight Schrute
+  - Schrute Farms
+  - tutorial
+---
+In this blogpost I will be analyzing A popular American show called The Office. The Office aired from March 2005 to May 2013. It has a total of 9 seasons and 201 shows and all streaming now on Netflix. A note to all hardcore office fan the entire library is going to leave the netflix platform in Jan 2021 and will make its debut on [NBC's own streaming platform](https://www.vox.com/culture/2019/6/26/18759675/office-leaving-netflix-nbcuniversal-2021). In this analysis I am going to look at the IMDB ratings and as well as conduct some text analysis. Last but not least, I wanted to know how many times Micheal Scott said "That's what she said". 
+
+This dataset comes from the tidytuesday weekly project organized by the folks at R-Studio. It's great to practice your R skills and learn new data analysis techniques in R. As always first, let's load in the packages we need. 
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(lubridate)
+library(ggplot2)
+library(gganimate)
+library(broom)
+library(tidytuesdayR)
+library(schrute)
+library(ggrepel)
+library(tidytext)
+library(plotly)
+library(knitr)
+library(kableExtra)
+library(formattable)
+library(viridis)
+library(tokenizers)
+```
+
+Let's load in the data, transcripts' has all the scripts from the characters, and episode information as well.  The ‘ratings’ dataset is scraped from the IMDB page and has season, episode and rating information. I show the sample data(the first three observations) for both the datasets as well.
+
+```{r message=FALSE, warning=FALSE}
+transcripts <- as_tibble(theoffice) %>%
+  mutate(season = as.integer(season),
+         episode = as.integer(episode)) %>%
+  mutate(character = str_remove_all(character, '"')) %>%
+  mutate(name = str_to_lower(str_remove_all(episode_name, "\\.| \\(Part.*")))
+
+first3 <- transcripts %>%
+          slice(1:3) 
+first3 <- data.frame(first3)
+
+kbl(first3, booktabs = T) %>%
+  kable_classic(full_width = F, html_font = "Cambria") %>%
+  kable_styling() %>%
+  row_spec(0:3, bold = T, color = "white", background = "#3C4F36")
+
+ratings <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-03-17/office_ratings.csv') %>%
+  mutate(name = str_to_lower(str_remove_all(title, "\\.| \\(Part.*|\\: Part.*")))
+
+first3rating <- ratings %>%
+                slice(1:3)
+first3rating <- data.frame(first3rating)
+
+kbl(first3rating, booktabs = T) %>%
+  kable_classic(full_width = F, html_font = "Cambria") %>%
+  kable_styling() %>%
+  row_spec(0:3, bold = T, color = "white", background = "#3C4F36")
+
+```
+
+First let's look at the average rating for every season to see which season had the highest rating.
+```{r message=FALSE, warning=FALSE}
+ratings %>%
+  group_by(season) %>%
+  summarize(avg_rating = mean(imdb_rating)) %>%
+  ggplot(aes(season, avg_rating)) +
+  geom_line() +
+  scale_x_continuous(breaks = 1:9)
+
+ratings %>%
+  group_by(season) %>%
+  summarize(avg_rating = round(mean(imdb_rating),1)) %>%
+  ggplot(aes(season, avg_rating)) +
+  geom_col() +
+  geom_text(aes(label = avg_rating), vjust = -0.5) +
+  scale_x_continuous(breaks = 1:9)
+```
+
+The trend(line) chart makes it seem like the season 8 is the worst so I added another bar chart to show that in context it isn't that poorly rated comparatively, although it has the lowest rating of all 9 seasons.
+
+This is fun and all but I want to know what the top 10 highest and lowest rated office episodes are. For that we are going to leverage the ratings dataset and sort by rating, then we will select the first 10 and last episodes along with the episode information.
+
+```{r message=FALSE, warning=FALSE}
+Top_10_rated <- ratings %>% 
+                select(season, episode, title, imdb_rating, air_date) %>%
+                arrange(desc(imdb_rating)) %>%
+                head(10) %>%
+                kbl(booktabs = T) %>%
+                kable_classic(full_width = F, html_font = "Cambria") %>%
+                kable_styling() %>%
+                row_spec(0:10, bold = T, color = "white", background = "#3C4F36")
+Top_10_rated
+```
+So the episode when Micheal Scott leaves and the series finale were the highest rated episodes in the series. 
+```{r message=FALSE, warning=FALSE}
+Bottom_10_rated <- ratings %>% 
+                select(season, episode, title, imdb_rating, air_date) %>%
+                arrange(desc(imdb_rating)) %>%
+                tail(10) %>%
+                kbl(booktabs = T) %>%
+                kable_classic(full_width = F, html_font = "Cambria") %>%
+                kable_styling() %>%
+                row_spec(0:10, bold = T, color = "white", background = "#3C4F36")
+Bottom_10_rated
+```
+
+The banker episode wasn't that bad in my opinion; it was just a compilation of all the good moments in the series till that point, it was like a decent good-bye to the old leadership at Dunder-Mifflin. Also the numbers of episodes in season 8 makes sense because it is one of the lowest rated seasons of the show. 
+
+My favorite episode is the diwali episode and diversity day, so I wanted to know how those compared to the remainder of the episodes. I will create a scatter plot and as well as a heatmap. 
+
+```{r}
+heatmap <- ggplot(ratings, aes(season, episode, fill = imdb_rating)) + 
+  geom_tile(colour = "white") + 
+  scale_fill_viridis(option="magma") +
+  labs(x = "Season", y ="Episode" ,title ="IMDB Ratings of The Office",fill="Rating") +
+  scale_x_continuous(breaks = 1:9)
+
+ggplotly(heatmap)
+```
+
+For the heat map the lighter the color, the higher the rating. 
+
+```{r}
+scatterplot <- ggplot(ratings, aes(x=air_date, y=imdb_rating, color=as.factor(season), text=title)) + 
+      geom_point() + 
+      guides(color=FALSE) +
+      labs(x="Date Aired", y="IMDB Rating")
+
+ggplotly(scatterplot)
+
+```
+
+Last but not least let's look at how many times did Micheal Scott say "That's what she said".
+
+```{r}
+OfficeSentences <- tokenize_sentences(transcripts$text) # tokenizing all sentences
+OfficeSentences <- lower_string <- tolower(OfficeSentences) # changing everything to lower case
+transcripts <- cbind(transcripts, OfficeSentences) #adding sentences back to the orginal dataset
+TWSS <- transcripts[grep("that's what she said", transcripts$OfficeSentences), ] #searching for Thats what she said
+```
+
+```{r}
+TWSS_Count <- TWSS %>%
+              group_by(season) %>%
+              summarise(Count=n())
+
+ggplot(TWSS_Count, aes(season, Count)) +
+  geom_col() +
+  geom_text(aes(label = Count), vjust = -0.5) +
+  scale_x_continuous(breaks = 1:9)
+              
+```
+Season 4 has the highest "That's what she said count"!. Lets see which character says it the most(I already have a hunch who is it, but let's let the data to the talking here)
+
+```{r}
+TWSS_Count_character <- TWSS %>%
+                        group_by(character) %>%
+                        summarise(Count=n()) %>%
+                        arrange(desc(Count)) %>%
+                        mutate(character = fct_reorder(character, Count))
+
+ggplot(TWSS_Count_character, aes(character, Count)) +
+  geom_bar(stat="identity", fill="#f68060", alpha = .6, width = .9) +
+  geom_text(aes(label = Count),  position = position_stack(0.5), color = "white") +
+  coord_flip() 
+```
+
+Micheal Scott said "that's what she said" the most times. I was surprised to see Creed and David here. While I was doing this analysis, the search terms took forever. I have never searched for a phrase so this was a good learning experience. If there is any other better way for me to have done this please let me know. Lastly, I wanted to thank everyone that read my blog and gave me feedback. It is much appreciated. I plan on doing at least one blog every two weeks or so please come back! I am working on setting up a contact page as well so it will be easier to get in touch with me!
+See you guys on the next one.

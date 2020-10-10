@@ -1,0 +1,38 @@
+---
+title: Analyzing the 2019 NBA Season
+author: Srikar Durgam
+date: '2020-10-07'
+slug: education-spending-analysis
+categories: []
+tags:
+  - Education
+  - Spending
+---
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(rvest)
+library(ggplot2)
+library(lubridate)
+library(janitor)
+library(RSocrata)
+library(jsonlite)
+```
+
+```{r message=FALSE, warning=FALSE}
+
+mydata <- read.csv('players_stats_by_season_full_details.csv')
+
+```
+
+```{r message=FALSE, warning=FALSE}
+PlayersGamesPlayed <- mydata %>% 
+                    filter(League == "NBA") %>%
+                    select(Player, GP) %>%
+                    group_by(Player) %>%
+                    summarise(Games_Played = sum(GP))%>%
+                    arrange(desc(Games_Played))
+
+head(PlayersGamesPlayed,10)
+```
+

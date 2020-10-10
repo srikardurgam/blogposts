@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Education on Srikar Durgam</title>
+    <link>/tags/education/</link>
+    <description>Recent content in Education on Srikar Durgam</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <lastBuildDate>Wed, 07 Oct 2020 00:00:00 +0000</lastBuildDate><atom:link href="/tags/education/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Analyzing the 2019 NBA Season</title>
+      <link>/post/education-spending-analysis/</link>
+      <pubDate>Wed, 07 Oct 2020 00:00:00 +0000</pubDate>
+      
+      <guid>/post/education-spending-analysis/</guid>
+      <description>library(tidyverse)library(rvest)library(ggplot2)library(lubridate)library(janitor)library(RSocrata)library(jsonlite)mydata &amp;lt;- read.csv(&amp;#39;players_stats_by_season_full_details.csv&amp;#39;)PlayersGamesPlayed &amp;lt;- mydata %&amp;gt;% filter(League == &amp;quot;NBA&amp;quot;) %&amp;gt;%select(Player, GP) %&amp;gt;%group_by(Player) %&amp;gt;%summarise(Games_Played = sum(GP))%&amp;gt;%arrange(desc(Games_Played))head(PlayersGamesPlayed,10)## # A tibble: 10 x 2## Player Games_Played## &amp;lt;fct&amp;gt; &amp;lt;int&amp;gt;## 1 LeBron James 1504## 2 Vince Carter 1476## 3 Dirk Nowitzki 1462## 4 Jason Terry 1445## 5 Tim Duncan 1424## 6 Tony Parker 1424## 7 Joe Johnson 1388## 8 Paul Pierce 1320## 9 Kyle Korver 1311## 10 Andre Miller 1270</description>
+    </item>
+    
+  </channel>
+</rss>

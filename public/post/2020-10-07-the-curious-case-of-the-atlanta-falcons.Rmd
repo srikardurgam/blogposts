@@ -1,0 +1,38 @@
+---
+title: The curious case of the Atlanta Falcons
+author: Srikar Durgam
+date: '2020-10-07'
+slug: the-curious-case-of-the-atlanta-falcons
+categories: []
+tags:
+  - nfl
+  - football
+  - 28-3
+---
+
+Ok here we go. Full disclosure, I am an Atlanta Falcons fan through and through.I love this team. Time to be honest the 2020 Atlanta Falcons are a terrible, terrible, terrible, terrible football team. They were also terrible in 2019 and 2018, just facts. In today's post I'll try to analytically explain why this team needs to not only fire their head coach but also try to answer the million dollar question "what went wrong since 2016". I should have also mentioned that I am the number one Matt Ryan fan. So all your prejudices against him will be destroyed at the end of this post. If your only rebuttal to this post is  "Ya but 28-3" then I have done my job. 
+
+
+```{r message=FALSE, warning=FALSE}
+library(nflfastR)
+library(tidyverse)
+library(ggplot2)
+library(gganimate)
+options(scipen = 9999)
+```
+
+First lets pull in all the data from the years 2016 to 2020(through week 4). To keep this simple, I will compare the offense and the defense from '17 to '20. Lets get to wrangling
+
+```{r}
+seasons <- 2016:2020
+
+allplays <- map_df(seasons, function(x) {
+  readRDS(
+    url(
+      paste0("https://raw.githubusercontent.com/guga31bb/nflfastR-data/master/data/play_by_play_",x,".rds")
+    )
+  ) 
+}) 
+```
+
+Now that we have the raw data (203796 observations of 340 variables!!) Lets first look at the 
