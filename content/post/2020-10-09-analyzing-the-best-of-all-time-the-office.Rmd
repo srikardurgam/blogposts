@@ -177,3 +177,4 @@ ggplot(TWSS_Count_character, aes(character, Count)) +
 
 Micheal Scott said "that's what she said" the most times. I was surprised to see Creed and David here. While I was doing this analysis, the search terms took forever. I have never searched for a phrase so this was a good learning experience. If there is any other better way for me to have done this please let me know. Lastly, I wanted to thank everyone that read my blog and gave me feedback. It is much appreciated. I plan on doing at least one blog every two weeks or so please come back! I am working on setting up a contact page as well so it will be easier to get in touch with me!
 See you guys on the next one.
+
