@@ -1,0 +1,192 @@
+---
+title: Analyzing Pizza Reviews 
+author: Srikar Durgam
+date: '2020-10-16'
+slug: analyzing-pizza-rating
+categories: []
+tags:
+  - Pizza
+  - New York
+---
+Welcome to another blog, this week I will be analyzing  pizza reviews, this data again comes from tidytuesday project. I am very excited to visualize some of this data. I have never worked with geographical data and I want to possibly add a map to this blog(You'll find out if I was successful or not.). I am also a huge fan of Dave Portnoy’s show reviewing pizza, the idea behind this show is basically that he takes ONE SINGLE BITE of a pizza joint’s cheese pizza and rates on a scale of 1 to 10. The below dataset names pizza_barstool has all the raw data included, along with the store’s latitude and longitude which makes it easier to chart. 
+Loading in our libraries first.
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(lubridate)
+library(ggplot2)
+library(gganimate)
+library(broom)
+library(tidytuesdayR)
+library(ggrepel)
+library(plotly)
+library(knitr)
+library(kableExtra)
+library(formattable)
+library(viridis)
+library(leaflet)
+```
+
+Then our data, pizza_datafiniti has stores across the United States. Because this is a lot of data and printing out sample data will be challenging. pizza_jared and pizza_barstool has pizza reviews only from New York. 
+
+```{r message=FALSE, warning=FALSE}
+pizza_jared <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-10-01/pizza_jared.csv")
+pizza_barstool <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-10-01/pizza_barstool.csv")
+pizza_datafiniti <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-10-01/pizza_datafiniti.csv")
+```
+
+```{r message=FALSE, warning=FALSE}
+first10 <- pizza_jared %>% head(10)
+kbl(first10, booktabs = T) %>%
+  kable_classic(full_width = F, html_font = "Cambria") %>%
+  kable_styling() %>%
+  row_spec(0:10, bold = T, color = "white", background = "#3C4F36")
+```
+Looks like this dataset is scraped from a website like Yelp, and grouped data that contains how custimers voted for a pizza place and how many times did they vote etc. Pretty useful stuff! Lets summarize the next data set by state how many records we have for each state, and lets only show states with more than 100 stores
+
+```{r message=FALSE, warning=FALSE}
+state <- pizza_datafiniti %>%
+         select(province) %>%
+         group_by(province) %>%
+         summarise(count = n()) %>%
+         filter(count>100) %>%
+         arrange(desc(count))
+
+kable(state, booktabs = T) %>%
+  kable_classic(full_width = F, html_font = "Cambria") %>%
+  kable_styling() %>%
+  row_spec(0:20, bold = T, color = "white", background = "#3C4F36") 
+```
+Lets explore this a little bit, I noticed that there was a price range in the data so I wanted to find out the 10 least and 10 most expensive pizza costs?
+
+```{r message=FALSE, warning=FALSE}
+min_price_pizza <- pizza_datafiniti %>% 
+                   select(province, price_range_min) %>%
+                   group_by(province) %>%
+                   summarise(store_count = n(), mean_min_price = round(mean(price_range_min))) %>%
+                   arrange(mean_min_price) %>%
+                   filter(store_count > 100) %>%
+                   tail(10)
+
+ggplot(min_price_pizza, aes(x= reorder(province,mean_min_price), y= mean_min_price)) +
+    geom_col(fill = "grey", width = .8) +
+    geom_point(shape = 21, fill = "orange", color = "black", size = 10, stroke = 1) +
+    geom_text(aes(x= reorder(province,mean_min_price), y= mean_min_price, label = mean_min_price),
+              color = "black", hjust = 0.5, 
+              fontface = "bold") +
+    theme_minimal() +
+    theme(text = element_text(family = "Nunito Bold", face = "bold", size = 10),
+          axis.text = element_text(face = "bold"),
+          axis.text.x = element_blank(),
+          axis.ticks = element_blank(),
+          panel.grid = element_blank(),
+          axis.title.x = element_text(hjust = 0)) +
+    labs(y = "Average Min Price",
+         x = "State") +
+    coord_flip() 
+```
+
+Illinois and Florida have the cheapest pizza. 
+
+```{r message=FALSE, warning=FALSE}
+max_price_pizza <- pizza_datafiniti %>% 
+                   select(province, price_range_max) %>%
+                   group_by(province) %>%
+                   summarise(store_count = n(), mean_max_price = round(mean(price_range_max))) %>%
+                   arrange(desc(mean_max_price)) %>%
+                   filter(store_count > 100) %>%
+                   head(10)
+ggplot(max_price_pizza, aes(x= reorder(province,mean_max_price), y= mean_max_price)) +
+    geom_col(fill = "grey", width = .8) +
+    geom_point(shape = 21, fill = "orange", color = "black", size = 10, stroke = 1) +
+    geom_text(aes(x= reorder(province,mean_max_price), y= mean_max_price, label = mean_max_price),
+              color = "black", hjust = 0.5, 
+              fontface = "bold") +
+    theme_minimal() +
+    theme(text = element_text(family = "Nunito Bold", face = "bold", size = 10),
+          axis.text = element_text(face = "bold"),
+          axis.text.x = element_blank(),
+          axis.ticks = element_blank(),
+          panel.grid = element_blank(),
+          axis.title.x = element_text(hjust = 0)) +
+    labs(y = "Average Max Price",
+         x = "State") +
+    coord_flip()
+```
+
+California and Arizona have the highest priced pizza! $30 a slice no thanks!!
+
+Let's get to the exciting part, I've recently noticed a trend where many of my friends are moving/visiting New York a couple of my ex-colleagues have decided to end their relationship with the bay area and have moved to the New Jersey and New York area. In speaking with one of my ex-colleague he mentioned that he wishes there was an interactive map which he can explore to choose a perfect pizza place. Below is my attempt to do that, I am sure you can find better data elsewhere but my goal is to replicate a map of New York with pizza rating provided by Dave Portnoy
+
+
+```{r}
+map <- pizza_barstool %>% select(name, review_stats_dave_total_score, latitude, longitude) %>%
+                   ggplot(aes(longitude, latitude))  +
+        borders("state") +
+        coord_equal() +
+        geom_point(aes(text=name, size=review_stats_dave_total_score), colour="red", alpha=1/2, name="name")
+ggplotly(map)
+```
+The map is great, took me a while but looks good to me. The hover text took forever to figure out. The map doesnt really tell us what are Dave Portnoy's favorite pizza places, so lets find out the top 10 best rated by Dave and Top 10 worst rated by Dave
+
+```{r message=FALSE, warning=FALSE}
+portnoy_fav <- pizza_barstool %>% 
+               select(name, review_stats_dave_total_score, city) %>%
+               filter(city == "New York") %>%
+               arrange(desc(review_stats_dave_total_score)) %>%
+               head(10)
+```
+
+```{r message=FALSE, warning=FALSE}
+ggplot(portnoy_fav, aes(x= reorder(name,review_stats_dave_total_score), y= review_stats_dave_total_score)) +
+    geom_col(fill = "grey", width = .8) +
+    geom_point(shape = 21, fill = "orange", color = "black", size = 10, stroke = 1) +
+    geom_text(aes(x= name, y= review_stats_dave_total_score, 
+                  label = review_stats_dave_total_score),
+              color = "black", hjust = 0.5, 
+              fontface = "bold") +
+    theme_minimal() +
+    theme(text = element_text(family = "Nunito Bold", face = "bold", size = 10),
+          axis.text = element_text(face = "bold"),
+          axis.text.x = element_blank(),
+          axis.ticks = element_blank(),
+          panel.grid = element_blank(),
+          axis.title.x = element_text(hjust = 0)) +
+    labs(y = "Rating",
+         x = "Pizza Place") +
+    coord_flip()
+```
+
+Now lets look at the poorly rated places
+
+```{r}
+portnoy_least_fav <- pizza_barstool %>% 
+               select(name, review_stats_dave_total_score, city) %>%
+               filter(city == "New York") %>%
+               arrange((review_stats_dave_total_score)) %>%
+               head(10)
+```
+
+```{r message=FALSE, warning=FALSE}
+ggplot(portnoy_least_fav, aes(x= reorder(name,review_stats_dave_total_score), y= review_stats_dave_total_score)) +
+    geom_col(fill = "grey", width = .8) +
+    geom_point(shape = 21, fill = "orange", color = "black", size = 10, stroke = 1) +
+    geom_text(aes(x= name, y= review_stats_dave_total_score, 
+                  label = review_stats_dave_total_score),
+              color = "black", hjust = 0.5, 
+              fontface = "bold") +
+    theme_minimal() +
+    theme(text = element_text(family = "Nunito Bold", face = "bold", size = 10),
+          axis.text = element_text(face = "bold"),
+          axis.text.x = element_blank(),
+          axis.ticks = element_blank(),
+          panel.grid = element_blank(),
+          axis.title.x = element_text(hjust = 0)) +
+    labs(y = "Rating",
+         x = "Pizza Place") +
+    coord_flip()
+```
+
+Whoa [Amtrak](https://twitter.com/stoolpresidente/status/1055587308374679552?lang=en) pizza Yikes!
+
+In conclusion, thanks once again for taking the time and reading through my blog. This week we analyzed some pizza rating reviews, and created some interactive plots.

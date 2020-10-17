@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Pizza on Srikar Durgam</title>
+    <link>/tags/pizza/</link>
+    <description>Recent content in Pizza on Srikar Durgam</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <lastBuildDate>Fri, 16 Oct 2020 00:00:00 +0000</lastBuildDate><atom:link href="/tags/pizza/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Analyzing Pizza Reviews</title>
+      <link>/post/analyzing-pizza-rating/</link>
+      <pubDate>Fri, 16 Oct 2020 00:00:00 +0000</pubDate>
+      
+      <guid>/post/analyzing-pizza-rating/</guid>
+      <description>Welcome to another blog, this week I will be analyzing pizza reviews, this data again comes from tidytuesday project. I am very excited to visualize some of this data. I have never worked with geographical data and I want to possibly add a map to this blog(You’ll find out if I was successful or not.). I am also a huge fan of Dave Portnoy’s show reviewing pizza, the idea behind this show is basically that he takes ONE SINGLE BITE of a pizza joint’s cheese pizza and rates on a scale of 1 to 10.</description>
+    </item>
+    
+  </channel>
+</rss>
