@@ -153,6 +153,7 @@ TrumpTweetsClean %>%
                mutate(bigram = str_c( word1, word2, sep = " ")) %>%
                count(bigram, word1, word2, sort=TRUE) %>%
                top_n(15,n) %>%
+               head(15) %>%
                ggplot(aes(x=fct_reorder(bigram,n), y=n)) + geom_col(stat = "identity") + coord_flip() +
                geom_text(aes(label = n), position = position_dodge(0.5), hjust = 0) + 
                labs (x= "Word", y= "Word Count")
