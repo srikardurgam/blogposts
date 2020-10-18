@@ -43,13 +43,26 @@ library(topicmodels)</code></pre>
   consumer_secret = api_secret,
   access_token = access_token,
   access_secret = access_secret)
-TrumpTweets &lt;- get_timeline(&quot;realDonaldTrump&quot;, n = 6400)</code></pre>
+#TrumpTweets &lt;- get_timeline(&quot;realDonaldTrump&quot;, n = 6400)</code></pre>
 <p>The time and date aspect did not come through clean so I will be recreating them with the same variable name and formating them using the lubridate package. I will then print out the first five tweets and their time to make sure it was properly converted.</p>
-<pre class="r"><code>TrumpTweetsClean &lt;- TrumpTweets %&gt;%
+<p>There is a limiting factor here, we are only able to extract approx. 3200 of President Trump’s tweets, believe it or not that’s only less than one month of tweets from 09/25/2020 to 10/17/2020.</p>
+<p>First I am going to make a wordcloud, there is some words that need be filter and I will include them in the filter statement below.</p>
+<pre class="r"><code>TrumpTweetsClean &lt;- read_csv(&quot;TrumpTweetsClean&quot;) %&gt;%
                     select(source, status_id, text, created_at, retweet_count, favorite_count, is_retweet) %&gt;%
-                    mutate(created_at =  as.POSIXct(created_at, format = &quot;%m-%d-%Y %H:%M:%S&quot;))
-
-First5 &lt;- TrumpTweetsClean %&gt;% select(text, created_at) %&gt;% head(5)
+                    mutate(created_at =  as.POSIXct(created_at, format = &quot;%m-%d-%Y %H:%M:%S&quot;))</code></pre>
+<pre><code>## Warning: Missing column names filled in: &#39;X1&#39; [1]</code></pre>
+<pre><code>## Parsed with column specification:
+## cols(
+##   X1 = col_double(),
+##   source = col_character(),
+##   status_id = col_double(),
+##   text = col_character(),
+##   created_at = col_datetime(format = &quot;&quot;),
+##   retweet_count = col_double(),
+##   favorite_count = col_double(),
+##   is_retweet = col_logical()
+## )</code></pre>
+<pre class="r"><code>First5 &lt;- TrumpTweetsClean %&gt;% select(text, created_at) %&gt;% head(5)
 kbl(First5, booktabs = T) %&gt;%
   kable_classic(full_width = F, html_font = &quot;Cambria&quot;) %&gt;%
   kable_styling() %&gt;%
@@ -68,48 +81,47 @@ created_at
 <tbody>
 <tr>
 <td style="text-align:left;font-weight: bold;color: white !important;background-color: #3C4F36 !important;">
-…while sacrificing American blood and treasure in endless foreign wars. Joe Biden is a corrupt politician — and the Biden family is a criminal enterprise. This makes Crooked Hillary Clinton look like amateur hour!
+Getting ready to land in Wisconsin. See you soon!
 </td>
 <td style="text-align:left;font-weight: bold;color: white !important;background-color: #3C4F36 !important;">
-2020-10-18 02:25:06
-</td>
-</tr>
-<tr>
-<td style="text-align:left;font-weight: bold;color: white !important;background-color: #3C4F36 !important;">
-Joe Biden is the living embodiment of the corrupt political class that enriched itself while draining the economic life and soul from our Country. For the last 47 years, Joe Biden shipped away your jobs, shut down your factories, threw open your borders, and ravaged our cities…
-</td>
-<td style="text-align:left;font-weight: bold;color: white !important;background-color: #3C4F36 !important;">
-2020-10-18 02:25:05
+2020-10-17 23:12:46
 </td>
 </tr>
 <tr>
 <td style="text-align:left;font-weight: bold;color: white !important;background-color: #3C4F36 !important;">
-This election is a choice between a TRUMP RECOVERY and a BIDEN DEPRESSION. If you vote for me, prosperity will surge, normal life will fully resume, and next year will be one of the greatest years in the history of our Country! <a href="https://t.co/gsFSgh2KPc" class="uri">https://t.co/gsFSgh2KPc</a>
+Final RCP Polling Averages Had Hillary Clinton Winning MI, WI, and PA <a href="https://t.co/xFQ8beqhDe" class="uri">https://t.co/xFQ8beqhDe</a> via <span class="citation">@BreitbartNews</span> The Polls are Fake just like much of the reported news. I won it all against Crooked Hillary!
 </td>
 <td style="text-align:left;font-weight: bold;color: white !important;background-color: #3C4F36 !important;">
-2020-10-18 02:19:37
-</td>
-</tr>
-<tr>
-<td style="text-align:left;font-weight: bold;color: white !important;background-color: #3C4F36 !important;">
-If you support our Police, if you stand with the HEROES of Law Enforcement, then you must defeat Joe Biden on November 3rd—VOTE #MAGA! <a href="https://t.co/MD4OISxDLJ" class="uri">https://t.co/MD4OISxDLJ</a>
-</td>
-<td style="text-align:left;font-weight: bold;color: white !important;background-color: #3C4F36 !important;">
-2020-10-18 01:53:48
+2020-10-17 23:05:56
 </td>
 </tr>
 <tr>
 <td style="text-align:left;font-weight: bold;color: white !important;background-color: #3C4F36 !important;">
-The Democrat Party you once knew — no longer exists! <a href="https://t.co/0Gou1Z49OQ" class="uri">https://t.co/0Gou1Z49OQ</a>
+THANK YOU MICHIGAN!
+<a href="https://t.co/gsFSgh2KPc" class="uri">https://t.co/gsFSgh2KPc</a> <a href="https://t.co/P2shx6YQBq" class="uri">https://t.co/P2shx6YQBq</a>
 </td>
 <td style="text-align:left;font-weight: bold;color: white !important;background-color: #3C4F36 !important;">
-2020-10-18 01:51:54
+2020-10-17 23:01:30
+</td>
+</tr>
+<tr>
+<td style="text-align:left;font-weight: bold;color: white !important;background-color: #3C4F36 !important;">
+<a href="https://t.co/2eSWa4IzOe" class="uri">https://t.co/2eSWa4IzOe</a>
+</td>
+<td style="text-align:left;font-weight: bold;color: white !important;background-color: #3C4F36 !important;">
+2020-10-17 22:59:04
+</td>
+</tr>
+<tr>
+<td style="text-align:left;font-weight: bold;color: white !important;background-color: #3C4F36 !important;">
+<a href="https://t.co/iyGkxZYGV2" class="uri">https://t.co/iyGkxZYGV2</a>
+</td>
+<td style="text-align:left;font-weight: bold;color: white !important;background-color: #3C4F36 !important;">
+2020-10-17 22:58:56
 </td>
 </tr>
 </tbody>
 </table>
-<p>There is a limiting factor here, we are only able to extract approx. 3200 of President Trump’s tweets, believe it or not that’s only less than one month of tweets from 09/25/2020 to 10/17/2020.</p>
-<p>First I am going to make a wordcloud, there is some words that need be filter and I will include them in the filter statement below.</p>
 <pre class="r"><code>Wordcloud &lt;- TrumpTweetsClean %&gt;% 
             unnest_tokens(word,text) %&gt;%
             anti_join(stop_words) %&gt;%
@@ -123,7 +135,7 @@ The Democrat Party you once knew — no longer exists! <a href="https://t.co/0Go
 
 Wordcloud</code></pre>
 <div id="htmlwidget-1" style="width:672px;height:480px;" class="wordcloud2 html-widget"></div>
-<script type="application/json" data-for="htmlwidget-1">{"x":{"word":["biden","president","vote","trump","joe","realdonaldtrump","people","court","election","american","amendment","supreme","news","democrats","maga","win","country","florida","america","senate","fake","obama","fbi","judge","media","barrett","sleepy","law","voters","ballots","time","day","jobs","total","watch","history","china","house","endorsement","russia","white","pennsylvania","complete","left","tonight","2016","flynn","republican","republicans","amy","coney","dems","voting","campaign","democrat","support","u.s","ballot","debate","nomination","nominee","americans","don’t","corrupt","economy","iowa","live","political","protect","scotus","it’s","polls","record","run","strong","wow","wrong","4","breaking","healthcare","life","night","radical","47","book","carolina","enforcement","fight","party","ready","world","coming","forward","foxnews","mail","north","office","russian","tax","2nd","covid","crime","didn’t","elected","he’s","hillary","home","job","military","ohio","police","poll","presidential","true","united"],"freq":[189,142,138,133,113,107,80,73,59,57,55,53,52,48,48,46,44,44,43,43,42,42,41,40,40,39,39,37,37,36,36,34,33,31,31,30,29,29,28,28,28,27,26,26,26,25,25,25,25,24,24,24,24,23,23,23,23,22,22,22,22,21,21,20,20,20,20,20,20,20,19,19,19,19,19,19,19,18,18,18,18,18,18,17,17,17,17,17,17,17,17,16,16,16,16,16,16,16,16,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15],"fontFamily":"Segoe UI","fontWeight":"bold","color":"random-dark","minSize":0,"weightFactor":0.952380952380952,"backgroundColor":"white","gridSize":0,"minRotation":-0.785398163397448,"maxRotation":0.785398163397448,"shuffle":true,"rotateRatio":0.4,"shape":"circle","ellipticity":0.65,"figBase64":null,"hover":null},"evals":[],"jsHooks":[]}</script>
+<script type="application/json" data-for="htmlwidget-1">{"x":{"word":["biden","president","trump","realdonaldtrump","joe","people","vote","news","democrats","american","election","america","country","maga","fake","left","media","win","china","total","court","amendment","federal","endorsement","law","complete","democrat","ballots","sleepy","time","obama","jobs","campaign","support","0001f1f8","0001f1fa","florida","history","americans","job","live","national","radical","republican","military","day","portland","supreme","judge","peace","voters","don","voting","watch","world","fbi","pennsylvania","mail","police","fe0f","life","senate","house","tonight","bad","political","run","russia","economy","white","ballot","coming","u.s","crime","2016","black","money","united","3","foxnews","night","record","taxes","dems","north","republicans","story","strong","government","governor","office","carolina","cities","enforcement","lives","party","barrett","days","incredible","november","pelosi","race"],"freq":[446,441,418,312,273,229,212,180,157,142,139,133,127,121,120,102,102,97,92,92,90,87,87,85,85,81,79,78,78,76,75,74,73,72,71,71,71,71,67,67,67,67,67,65,64,63,63,61,60,59,59,58,58,58,58,57,57,56,55,54,54,54,53,53,52,52,52,52,51,51,50,50,50,49,47,47,47,46,45,45,45,45,45,44,44,44,44,44,43,43,43,42,42,42,42,42,41,41,41,41,41,41],"fontFamily":"Segoe UI","fontWeight":"bold","color":"random-dark","minSize":0,"weightFactor":0.403587443946188,"backgroundColor":"white","gridSize":0,"minRotation":-0.785398163397448,"maxRotation":0.785398163397448,"shuffle":true,"rotateRatio":0.4,"shape":"circle","ellipticity":0.65,"figBase64":null,"hover":null},"evals":[],"jsHooks":[]}</script>
 <p>Its kind of hard to read this word cloud, obviously the words Biden, Trump and Joe are the most commonly used but lets look at the top 15 words in these tweets.</p>
 <pre class="r"><code>TrumpTweetsClean %&gt;% 
             unnest_tokens(word,text) %&gt;%
@@ -159,7 +171,7 @@ top_100 &lt;- bigram_freq %&gt;%
            top_n(100,n) 
 top_100 %&gt;% wordcloud2()</code></pre>
 <div id="htmlwidget-2" style="width:672px;height:480px;" class="wordcloud2 html-widget"></div>
-<script type="application/json" data-for="htmlwidget-2">{"x":{"word":["joe biden","supreme court","sleepy joe","fake news","amy coney","coney barrett","white house","american people","president trump","total endorsement","vote trump","law enforcement","judge amy","judge barrett","radical left","north carolina","hunter biden","stock market","chris wallace","obama biden","absentee ballots","approval rating","lamestream media","loyal hardworking","pre existing","adam schiff","court vacancy","election day","existing conditions","maxine waters","nancy pelosi","russia hoax","russian spy","vice president","american patriots","ballot harvesting","crazy nancy","crooked hillary","hardworking american","iron range","rigged election","steve scully","trump russia","u.s supreme","amendment vote","american history","biden wins","corrupt politician","court justice","court nominee","fbi texts","god bless","healthcare plan","hillary clinton","live president","lower cost","news media","poll watcher","republican party","russia collusion","town hall","trump campaign","barack obama","biden administration","brilliant legal","china plague","china virus","constitutional judges","coronavirus vaccine","crossfire hurricane","donald trump","election poll","excellent choice","federal government","hell vote","hurricane delta","joe biden’s","kamala harris","left democrats","mail ballots","military vets","news conference","pigs veterans","president trump’s","project veritas","red wave","republican senate","sanford florida","saved minneapolis","senate republicans","social security","south carolina","suspected russian","television ratings","texts detail","trump administration","trump election","watcher sign","wins china","absentee ballot","airport maga","amendment rights","america wins","answer questions","biden harris","biden refuses","billion dollars","bossie trump","breaking fbi","campaign trail","caught cold","china wins","collusion probe","confirm constitutional","debate moderator","drug test","endless wars","enjoy foxnews","excerpt lewandowski","exclusive excerpt","fake polls","fbi agent","fbi’s trump","florida tonight","flynn investigation","i’m running","ilhan omar","intelligence committee","james comey","johnstown pennsylvania","judicial watch","legal mind","liability insurance","macon georgia","mainstream media","mike pence","nursing homes","oann newsmax","president realdonaldtrump's","president succeeds","rally tonight","repeal section","scotus nomination","senate democrats","sick people","strongly supports","tax increases","tremendous congressman","trump's supreme","trump america","tuesday night","u.s attorney","u.s senate","vote maga","voter fraud","voting begins","walter reed","win pennsylvania"],"freq":[65,52,36,27,24,23,23,22,22,22,18,17,16,16,16,13,11,11,10,10,9,9,8,8,8,7,7,7,7,7,7,7,7,7,6,6,6,6,6,6,6,6,6,6,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3],"fontFamily":"Segoe UI","fontWeight":"bold","color":"random-dark","minSize":0,"weightFactor":2.76923076923077,"backgroundColor":"white","gridSize":0,"minRotation":-0.785398163397448,"maxRotation":0.785398163397448,"shuffle":true,"rotateRatio":0.4,"shape":"circle","ellipticity":0.65,"figBase64":null,"hover":null},"evals":[],"jsHooks":[]}</script>
+<script type="application/json" data-for="htmlwidget-2">{"x":{"word":["joe biden","president trump","fake news","sleepy joe","total endorsement","supreme court","radical left","law enforcement","white house","north carolina","live president","american people","news conference","donald trump","federal government","amy coney","coney barrett","national guard","critical race","nancy pelosi","race theory","vote trump","china virus","peace prize","democrat run","middle east","nobel peace","judge barrett","kamala harris","republican party","ted wheeler","approval rating","federal judge","judge amy","absentee ballots","drug prices","obama biden","stock market","crooked hillary","fox news","hunter biden","news media","run cities","biden wins","crazy nancy","election day","lamestream media","trump campaign","bus service","chris wallace","god bless","left democrats","military vets","national convention","post office","president donald","rigged election","gov tom","israel uae","tom wolf","arab emirates","atlantic story","beauty parlor","black lives","delivers remarks","lives matter","nursing homes","strongly supports","trump administration","united arab","vice president","american history","american patriots","barack obama","hurricane laura","left wing","loyal hardworking","poll watcher","president realdonaldtrump's","trump election","wins china","ballot harvesting","biden campaign","china wins","drug companies","election poll","federal infrastructure","hillary clinton","infrastructure funds","peace deal","pre existing","russia hoax","support bus","universal mail","washington d.c","watcher sign","adam schiff","bernie sanders","billion dollars","court vacancy","existing conditions","hardworking american","iron range","joe hiden","mainstream media","maxine waters","million jobs","raise taxes","republican national","russia collusion","russian spy","slow joe","trillion dollars","u.s supreme","walter reed"],"freq":[171,87,86,75,65,60,57,42,40,38,36,32,30,26,25,24,24,23,21,21,21,21,20,20,18,18,18,17,17,17,17,16,16,16,15,15,15,15,14,14,14,14,14,13,13,13,13,13,12,12,12,12,12,12,12,12,12,11,11,11,10,10,10,10,10,10,10,10,10,10,10,9,9,9,9,9,9,9,9,9,9,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7],"fontFamily":"Segoe UI","fontWeight":"bold","color":"random-dark","minSize":0,"weightFactor":1.05263157894737,"backgroundColor":"white","gridSize":0,"minRotation":-0.785398163397448,"maxRotation":0.785398163397448,"shuffle":true,"rotateRatio":0.4,"shape":"circle","ellipticity":0.65,"figBase64":null,"hover":null},"evals":[],"jsHooks":[]}</script>
 <p>Like the wordcloud above this cool, but kind of hard to read, lets chart it the same way.</p>
 <pre class="r"><code>TrumpTweetsClean %&gt;%
                unnest_tokens(bigram, text, 

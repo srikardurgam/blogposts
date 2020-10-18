@@ -58,13 +58,17 @@ twitter_token <- create_token(
   consumer_secret = api_secret,
   access_token = access_token,
   access_secret = access_secret)
-TrumpTweets <- get_timeline("realDonaldTrump", n = 6400)
+#TrumpTweets <- get_timeline("realDonaldTrump", n = 6400)
 ```
 
 The time and date aspect did not come through clean so I will be recreating them with the same variable name and formating them using the lubridate package. I will then print out the first five tweets and their time to make sure it was properly converted. 
 
-```{r message=FALSE, warning=FALSE}
-TrumpTweetsClean <- TrumpTweets %>%
+
+There is a limiting factor here, we are only able to extract approx. 3200 of President Trump's tweets, believe it or not that's only less than one month of tweets from 09/25/2020 to 10/17/2020. 
+
+First I am going to make a wordcloud, there is some words that need be filter and I will include them in the filter statement below.
+```{r}
+TrumpTweetsClean <- read_csv("TrumpTweetsClean") %>%
                     select(source, status_id, text, created_at, retweet_count, favorite_count, is_retweet) %>%
                     mutate(created_at =  as.POSIXct(created_at, format = "%m-%d-%Y %H:%M:%S"))
 
@@ -74,10 +78,6 @@ kbl(First5, booktabs = T) %>%
   kable_styling() %>%
   row_spec(0:5, bold = T, color = "white", background = "#3C4F36")
 ```
-
-There is a limiting factor here, we are only able to extract approx. 3200 of President Trump's tweets, believe it or not that's only less than one month of tweets from 09/25/2020 to 10/17/2020. 
-
-First I am going to make a wordcloud, there is some words that need be filter and I will include them in the filter statement below.
 
 ```{r message=FALSE, warning=FALSE}
 Wordcloud <- TrumpTweetsClean %>% 
