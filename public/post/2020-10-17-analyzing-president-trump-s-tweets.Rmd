@@ -1,0 +1,318 @@
+---
+title: Analyzing President Trump's Tweets
+author: Srikar Durgam
+date: '2020-10-17'
+slug: analyzing-president-trump-s-tweets
+categories: []
+tags:
+  - Twitter
+---
+President Trump has a very unique relationship with Twitter. In many ways he revolutionized using twitter for politicians it is his virtual microphone and his very important tool that helps him reach his audiences by the click of the button. So I wanted to take an analytical approach and really understand what he has to say.
+
+I will be using the rtweets package to extract all tweets and also do some topic modeling to explore some of the topics he has been talking about. The following week I will follow this up Joe Biden tweets how they matchup with Trump's twitter.
+
+Like I mentioned before in my [First Presidential Debate Analysis](https://srikardatascience.netlify.app/post/first-presidetial-debate-analysis/), my goal here isn't to sway you in one direction or anything but only to provide you with an analytical view of what President Trump is saying on twitter. 
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(lubridate)
+library(ggplot2)
+library(gganimate)
+library(broom)
+library(tidytuesdayR)
+library(ggrepel)
+library(plotly)
+library(knitr)
+library(kableExtra)
+library(formattable)
+library(viridis)
+library(leaflet)
+library(rtweet)
+library(tidytext)
+library(wordcloud2)
+library(topicmodels)
+```
+
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+## whatever name you assigned to your created app,
+appname <- "tweeter-getter"
+
+## api key (example below is not a real key)
+api_key <- "yzarn6R42MwO98F0nNwbhCH35"
+
+## api secret (example below is not a real key)
+api_secret <- "P0wuxF3VRIlIhK5vf0O0sPE6jNtPf7kV6jn5dJqCEucITSezFa"
+
+## access token  (example below is not a real key)
+access_token <- "252827593-plzW4gVQRylWunvipuLOHRKJP2HcICD8FaxPWhMx"
+
+## access  secret (example below is not a real key)
+access_secret <- "SPwMvGTc1tOVlGvRuptUnBrIel0lL7v1U8YbcKBXhM4gV"
+```
+
+```{r message=FALSE, warning=FALSE}
+twitter_token <- create_token(
+  app = appname,
+  consumer_key = api_key,
+  consumer_secret = api_secret,
+  access_token = access_token,
+  access_secret = access_secret)
+TrumpTweets <- get_timeline("realDonaldTrump", n = 6400)
+```
+
+The time and date aspect did not come through clean so I will be recreating them with the same variable name and formating them using the lubridate package. I will then print out the first five tweets and their time to make sure it was properly converted. 
+
+```{r message=FALSE, warning=FALSE}
+TrumpTweetsClean <- TrumpTweets %>%
+                    select(source, status_id, text, created_at, retweet_count, favorite_count, is_retweet) %>%
+                    mutate(created_at =  as.POSIXct(created_at, format = "%m-%d-%Y %H:%M:%S"))
+
+First5 <- TrumpTweetsClean %>% select(text, created_at) %>% head(5)
+kbl(First5, booktabs = T) %>%
+  kable_classic(full_width = F, html_font = "Cambria") %>%
+  kable_styling() %>%
+  row_spec(0:5, bold = T, color = "white", background = "#3C4F36")
+```
+
+There is a limiting factor here, we are only able to extract approx. 3200 of President Trump's tweets, believe it or not that's only less than one month of tweets from 09/25/2020 to 10/17/2020. 
+
+First I am going to make a wordcloud, there is some words that need be filter and I will include them in the filter statement below.
+
+```{r message=FALSE, warning=FALSE}
+Wordcloud <- TrumpTweetsClean %>% 
+            unnest_tokens(word,text) %>%
+            anti_join(stop_words) %>%
+            filter(!word %in%c("t.co", "https",  "twitter", "iphone", "amp", "rt", "android", 
+                               "it's","i'm","2", "1")) %>%
+            group_by(word) %>%
+            summarise(n=n()) %>%
+            arrange(desc(n)) %>%
+            top_n(100,n) %>% 
+            wordcloud2()
+
+Wordcloud
+```
+
+Its kind of hard to read this word cloud, obviously the words Biden, Trump and Joe are the most commonly used but lets look at the top 15 words in these tweets.
+
+```{r message=FALSE, warning=FALSE}
+TrumpTweetsClean %>% 
+            unnest_tokens(word,text) %>%
+            anti_join(stop_words) %>%
+            filter(!word %in%c("t.co", "https",  "twitter", "iphone", "amp", "rt", "android", 
+                               "it's","i'm","2", "1", "realdonaldtrump")) %>%
+            group_by(word) %>%
+            summarise(n=n()) %>%
+            arrange(desc(n)) %>%
+            top_n(15,n) %>%
+            ggplot(aes(x=fct_reorder(word,n), y=n)) + geom_col(stat = "identity") + coord_flip() +
+            geom_text(aes(label = n), position = position_dodge(0.5), hjust = 0) + labs (x= "Word", y= "Word Count")
+```
+
+Noe lets look at some bi-grams, and see what frequent two words are appearing.
+
+```{r message=FALSE, warning=FALSE}
+bigram_freq <- TrumpTweetsClean %>%
+               unnest_tokens(bigram, text, 
+		           token = "ngrams", n = 2) %>%
+               separate(bigram, c("word1", "word2"), sep = " ") %>%
+               filter(!word1 %in% stop_words$word) %>%
+               filter(!word2 %in% stop_words$word) %>%
+               filter(!word1 %in% c("t.co", "https", "false", "twitter", "iphone", "amp", "rt", "android",
+                                    "realdonaldtrump")) %>%
+               filter(!word2 %in% c("t.co", "https", "false", "twitter", "iphone", "amp", "rt", "android",
+                                    "realdonaldtrump")) %>%
+               filter(!str_detect(word1,"^\\d")) %>% 
+               filter(!str_detect(word2,"^\\d"))%>%
+               mutate(bigram = str_c( word1, word2, sep = " ")) %>%
+               count(bigram, word1, word2, sort=TRUE) 
+
+top_100 <- bigram_freq %>%
+           select(bigram,n) %>%
+           arrange(desc(n)) %>%
+           top_n(100,n) 
+top_100 %>% wordcloud2()
+```
+
+Like the wordcloud above this cool, but kind of hard to read, lets chart it the same way. 
+
+```{r message=FALSE, warning=FALSE}
+TrumpTweetsClean %>%
+               unnest_tokens(bigram, text, 
+		           token = "ngrams", n = 2) %>%
+               separate(bigram, c("word1", "word2"), sep = " ") %>%
+               filter(!word1 %in% stop_words$word) %>%
+               filter(!word2 %in% stop_words$word) %>%
+               filter(!word1 %in% c("t.co", "https", "false", "twitter", "iphone", "amp", "rt", "android",
+                                    "realdonaldtrump")) %>%
+               filter(!word2 %in% c("t.co", "https", "false", "twitter", "iphone", "amp", "rt", "android",
+                                    "realdonaldtrump")) %>%
+               filter(!str_detect(word1,"^\\d")) %>% 
+               filter(!str_detect(word2,"^\\d"))%>%
+               mutate(bigram = str_c( word1, word2, sep = " ")) %>%
+               count(bigram, word1, word2, sort=TRUE) %>%
+               top_n(15,n) %>%
+               ggplot(aes(x=fct_reorder(bigram,n), y=n)) + geom_col(stat = "identity") + coord_flip() +
+               geom_text(aes(label = n), position = position_dodge(0.5), hjust = 0) + 
+               labs (x= "Word", y= "Word Count")
+```
+
+
+Very intersting that we see North Carolina here. Before moving onto the sentiment analysis, lets see on what days does President Trump tweet the most!
+
+```{r message=FALSE, warning=FALSE}
+TweetsbyDay <- TrumpTweetsClean %>% 
+               select(text, created_at) %>%
+               mutate(day = format(created_at, format = "%A")) %>%
+               count(day) %>%
+               ggplot(aes(x=fct_reorder(day,-n), y=n)) + geom_col(stat = "identity") +
+               geom_text(aes(label = n), position = position_dodge(0.9), vjust = 0) + 
+               labs (x= "Day", y= "Number of Tweets")
+
+TweetsbyDay
+```
+
+
+Now lets do some sentiment analysis, and find out which words President Trump uses in positive and negative terms. 
+
+```{r message=FALSE, warning=FALSE}
+TrumpTweetsClean %>% unnest_tokens(word,text) %>%
+                     anti_join(stop_words) %>%
+                     filter(!word %in%c("t.co", "https", "false", "twitter", "iphone", 
+                                         "amp", "rt", "android", "it's","i'm","2", "1", "realdonaldtrump")) %>%
+                     group_by(word) %>%
+                     summarise(n=n()) %>%
+                     arrange(desc(n)) %>%
+                     top_n(100,n) %>%
+                     inner_join(get_sentiments("bing"), by = "word") %>%
+                     group_by(sentiment) %>%
+                     top_n(15,n) %>%
+                     mutate(score = if_else(sentiment == "positive", n, -n)) %>%
+                     ggplot(aes(reorder(word,n),n , fill = sentiment)) + 
+                     geom_col() + 
+                     coord_flip() + 
+                     facet_wrap(~ sentiment, scales = "free_y") + 
+                     labs(title = "Top 10 Terms by Sentiment",
+                         x = "term", y = "score")
+```
+
+We have the regular suspects here. Obviously we would expect words like fake, radical, bad and crime would have a negative sentiment attached with them. Now let's move on to Topic Modeling. Topic Modeling is a method for unsupervised classification of documents(in this case tweets). It is very similar to clustering of numerical data.
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+tweets_dtm <- TrumpTweetsClean %>%
+              unnest_tokens(word,text) %>%
+              anti_join(stop_words) %>%
+              filter(!word %in%c("t.co", "https", "false", "twitter", "iphone", "amp", "rt", "android", "it's",
+                                 "i'm","2", "1", "realdonaldtrump", "realdonaldtrump's")) %>%
+              summarise(status_id, word) %>%
+              count(status_id, word, sort=TRUE)
+
+
+tweets_dtm %>% pivot_wider(names_from = word, values_from=n)
+
+tweets_dtmatrix <- tweets_dtm %>%
+                  cast_dtm(status_id,word,n)
+
+tweets_lda_4 <- LDA(tweets_dtmatrix, k = 4, control = list(seed = 1234))
+tweets_lda_6 <- LDA(tweets_dtmatrix, k = 6, control = list(seed = 1234))
+tweets_lda_8 <- LDA(tweets_dtmatrix, k = 8, control = list(seed = 1234))
+tweets_lda_10 <- LDA(tweets_dtmatrix, k = 10, control = list(seed = 1234))
+tweets_lda_16 <- LDA(tweets_dtmatrix, k = 16, control = list(seed = 1234))
+```
+
+```{r message=FALSE, warning=FALSE}
+tidy_lda_4 <- tidy(tweets_lda_4, matrix = "beta")
+tidy_lda_6 <- tidy(tweets_lda_6, matrix = "beta")
+tidy_lda_8 <- tidy(tweets_lda_8, matrix = "beta")
+tidy_lda_10 <- tidy(tweets_lda_10, matrix = "beta")
+tidy_lda_16 <- tidy(tweets_lda_16, matrix = "beta")
+
+topic_terms_4 <- tidy_lda_4 %>%
+               filter(!term %in% c("t.co", "https", "false", "twitter", "iphone", "amp", "rt", "android", "it's",
+                                 "i'm","2", "1", "realdonaldtrump", "realdonaldtrump's")) %>%
+               group_by(topic) %>%
+               top_n(5, beta) %>%
+               arrange(topic)
+
+topic_terms_4 %>%
+  mutate(term = reorder(term, beta)) %>%
+ggplot(aes(reorder(term, beta), beta, fill = as.factor(topic))) +
+  geom_col(show.legend = TRUE) +
+  facet_wrap(~ topic, scales = "free_y") +
+  coord_flip() +
+  labs(title = "4 Topics",
+       x = NULL, y = expression(beta))
+
+topic_terms_6 <- tidy_lda_6 %>%
+               filter(!term %in% c("t.co", "https", "false", "twitter", "iphone", "amp", "rt", "android", "it's",
+                                 "i'm","2", "1", "realdonaldtrump", "realdonaldtrump's")) %>%
+               group_by(topic) %>%
+               top_n(5, beta) %>%
+               arrange(topic)
+
+topic_terms_6 %>%
+  mutate(term = reorder(term, beta)) %>%
+ggplot(aes(reorder(term, beta), beta, fill = as.factor(topic))) +
+  geom_col(show.legend = TRUE) +
+  facet_wrap(~ topic, scales = "free_y") +
+  coord_flip() +
+  labs(title = "6 Topics",
+       x = NULL, y = expression(beta))
+
+topic_terms_8 <- tidy_lda_8 %>%
+               filter(!term %in% c("t.co", "https", "false", "twitter", "iphone", "amp", "rt", "android", "it's",
+                                 "i'm","2", "1", "realdonaldtrump", "realdonaldtrump's")) %>%
+               group_by(topic) %>%
+               top_n(5, beta) %>%
+               arrange(topic)
+
+topic_terms_8 %>%
+  mutate(term = reorder(term, beta)) %>%
+ggplot(aes(reorder(term, beta), beta, fill = as.factor(topic))) +
+  facet_wrap(~ topic, scales = "free_y") +
+  geom_col(show.legend = TRUE) +
+  coord_flip() +
+  labs(title = "8 Topics",
+       x = NULL, y = expression(beta))
+
+
+topic_terms_10 <- tidy_lda_10 %>%
+               filter(!term %in% c("t.co", "https", "false", "twitter", "iphone", "amp", "rt", "android", "it's",
+                                 "i'm","2", "1", "realdonaldtrump", "realdonaldtrump's")) %>%
+               group_by(topic) %>%
+               top_n(5, beta) %>%
+               arrange(topic)
+
+topic_terms_10 %>%
+  mutate(term = reorder(term, beta)) %>%
+ggplot(aes(reorder(term, beta), beta,fill = as.factor(topic))) +
+  facet_wrap(~ topic, scales = "free_y") +
+  geom_col(show.legend = TRUE) +
+  coord_flip() +
+  labs(title = "10 Topics",
+       x = NULL, y = expression(beta)) 
+
+topic_terms_16 <- tidy_lda_16 %>%
+               filter(!term %in% c("t.co", "https", "false", "twitter", "iphone", "amp", "rt", "android", "it's",
+                                 "i'm","2", "1", "realdonaldtrump", "realdonaldtrump's")) %>%
+               group_by(topic) %>%
+               top_n(5, beta) %>%
+               arrange(topic)
+
+topic_terms_16 %>%
+  mutate(term = reorder(term, beta)) %>%
+ggplot(aes(reorder(term, beta), beta, fill = as.factor(topic))) +
+  geom_col(show.legend = TRUE) +
+  facet_wrap(~ topic, scales = "free_y") +
+  coord_flip() +
+  labs(title = "16 Topics",
+       x = NULL, y = expression(beta))
+
+```
+
+There's a lot to process here, I am not a huge fan of the 16 topics chart but I think the 8 and 10 are very helpful. I am not going to comment on what each of these topics mean. I think that would be hard but this will give us an idea of what he is thinking and tweeting about on a daily basis. 
+
+To conclude, this was a very fun blogspot I can't wait to see what Vice President Joe Biden has to say, as always I want to reiterate that the point of this blog isn't to influence your decision, however I am only trying to analytically understand what the President is trying convey to his followers via twitter.
+
+

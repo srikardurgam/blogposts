@@ -5,7 +5,17 @@
     <link>/post/</link>
     <description>Recent content in Posts on Srikar Durgam</description>
     <generator>Hugo -- gohugo.io</generator>
-    <lastBuildDate>Fri, 16 Oct 2020 00:00:00 +0000</lastBuildDate><atom:link href="/post/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sat, 17 Oct 2020 00:00:00 +0000</lastBuildDate><atom:link href="/post/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Analyzing President Trump&#39;s Tweets</title>
+      <link>/post/analyzing-president-trump-s-tweets/</link>
+      <pubDate>Sat, 17 Oct 2020 00:00:00 +0000</pubDate>
+      
+      <guid>/post/analyzing-president-trump-s-tweets/</guid>
+      <description>President Trump has a very unique relationship with Twitter. In many ways he revolutionized using twitter for politicians it is his virtual microphone and his very important tool that helps him reach his audiences by the click of the button. So I wanted to take an analytical approach and really understand what he has to say.
+I will be using the rtweets package to extract all tweets and also do some topic modeling to explore some of the topics he has been talking about.</description>
+    </item>
+    
     <item>
       <title>Analyzing Pizza Reviews</title>
       <link>/post/analyzing-pizza-rating/</link>

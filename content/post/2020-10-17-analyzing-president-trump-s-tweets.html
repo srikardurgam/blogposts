@@ -1,0 +1,302 @@
+---
+title: Analyzing President Trump's Tweets
+author: Srikar Durgam
+date: '2020-10-17'
+slug: analyzing-president-trump-s-tweets
+categories: []
+tags:
+  - Twitter
+---
+
+<script src="/rmarkdown-libs/kePrint/kePrint.js"></script>
+<link href="/rmarkdown-libs/lightable/lightable.css" rel="stylesheet" />
+<script src="/rmarkdown-libs/htmlwidgets/htmlwidgets.js"></script>
+<link href="/rmarkdown-libs/wordcloud2/wordcloud.css" rel="stylesheet" />
+<script src="/rmarkdown-libs/wordcloud2/wordcloud2.js"></script>
+<script src="/rmarkdown-libs/wordcloud2/hover.js"></script>
+<script src="/rmarkdown-libs/wordcloud2-binding/wordcloud2.js"></script>
+
+
+<p>President Trump has a very unique relationship with Twitter. In many ways he revolutionized using twitter for politicians it is his virtual microphone and his very important tool that helps him reach his audiences by the click of the button. So I wanted to take an analytical approach and really understand what he has to say.</p>
+<p>I will be using the rtweets package to extract all tweets and also do some topic modeling to explore some of the topics he has been talking about. The following week I will follow this up Joe Biden tweets how they matchup with Trump’s twitter.</p>
+<p>Like I mentioned before in my <a href="https://srikardatascience.netlify.app/post/first-presidetial-debate-analysis/">First Presidential Debate Analysis</a>, my goal here isn’t to sway you in one direction or anything but only to provide you with an analytical view of what President Trump is saying on twitter.</p>
+<pre class="r"><code>library(tidyverse)
+library(lubridate)
+library(ggplot2)
+library(gganimate)
+library(broom)
+library(tidytuesdayR)
+library(ggrepel)
+library(plotly)
+library(knitr)
+library(kableExtra)
+library(formattable)
+library(viridis)
+library(leaflet)
+library(rtweet)
+library(tidytext)
+library(wordcloud2)
+library(topicmodels)</code></pre>
+<pre class="r"><code>twitter_token &lt;- create_token(
+  app = appname,
+  consumer_key = api_key,
+  consumer_secret = api_secret,
+  access_token = access_token,
+  access_secret = access_secret)
+TrumpTweets &lt;- get_timeline(&quot;realDonaldTrump&quot;, n = 6400)</code></pre>
+<p>The time and date aspect did not come through clean so I will be recreating them with the same variable name and formating them using the lubridate package. I will then print out the first five tweets and their time to make sure it was properly converted.</p>
+<pre class="r"><code>TrumpTweetsClean &lt;- TrumpTweets %&gt;%
+                    select(source, status_id, text, created_at, retweet_count, favorite_count, is_retweet) %&gt;%
+                    mutate(created_at =  as.POSIXct(created_at, format = &quot;%m-%d-%Y %H:%M:%S&quot;))
+
+First5 &lt;- TrumpTweetsClean %&gt;% select(text, created_at) %&gt;% head(5)
+kbl(First5, booktabs = T) %&gt;%
+  kable_classic(full_width = F, html_font = &quot;Cambria&quot;) %&gt;%
+  kable_styling() %&gt;%
+  row_spec(0:5, bold = T, color = &quot;white&quot;, background = &quot;#3C4F36&quot;)</code></pre>
+<table class=" lightable-classic table" style="font-family: Cambria; width: auto !important; margin-left: auto; margin-right: auto; margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;font-weight: bold;color: white !important;background-color: #3C4F36 !important;">
+text
+</th>
+<th style="text-align:left;font-weight: bold;color: white !important;background-color: #3C4F36 !important;">
+created_at
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;font-weight: bold;color: white !important;background-color: #3C4F36 !important;">
+…while sacrificing American blood and treasure in endless foreign wars. Joe Biden is a corrupt politician — and the Biden family is a criminal enterprise. This makes Crooked Hillary Clinton look like amateur hour!
+</td>
+<td style="text-align:left;font-weight: bold;color: white !important;background-color: #3C4F36 !important;">
+2020-10-18 02:25:06
+</td>
+</tr>
+<tr>
+<td style="text-align:left;font-weight: bold;color: white !important;background-color: #3C4F36 !important;">
+Joe Biden is the living embodiment of the corrupt political class that enriched itself while draining the economic life and soul from our Country. For the last 47 years, Joe Biden shipped away your jobs, shut down your factories, threw open your borders, and ravaged our cities…
+</td>
+<td style="text-align:left;font-weight: bold;color: white !important;background-color: #3C4F36 !important;">
+2020-10-18 02:25:05
+</td>
+</tr>
+<tr>
+<td style="text-align:left;font-weight: bold;color: white !important;background-color: #3C4F36 !important;">
+This election is a choice between a TRUMP RECOVERY and a BIDEN DEPRESSION. If you vote for me, prosperity will surge, normal life will fully resume, and next year will be one of the greatest years in the history of our Country! <a href="https://t.co/gsFSgh2KPc" class="uri">https://t.co/gsFSgh2KPc</a>
+</td>
+<td style="text-align:left;font-weight: bold;color: white !important;background-color: #3C4F36 !important;">
+2020-10-18 02:19:37
+</td>
+</tr>
+<tr>
+<td style="text-align:left;font-weight: bold;color: white !important;background-color: #3C4F36 !important;">
+If you support our Police, if you stand with the HEROES of Law Enforcement, then you must defeat Joe Biden on November 3rd—VOTE #MAGA! <a href="https://t.co/MD4OISxDLJ" class="uri">https://t.co/MD4OISxDLJ</a>
+</td>
+<td style="text-align:left;font-weight: bold;color: white !important;background-color: #3C4F36 !important;">
+2020-10-18 01:53:48
+</td>
+</tr>
+<tr>
+<td style="text-align:left;font-weight: bold;color: white !important;background-color: #3C4F36 !important;">
+The Democrat Party you once knew — no longer exists! <a href="https://t.co/0Gou1Z49OQ" class="uri">https://t.co/0Gou1Z49OQ</a>
+</td>
+<td style="text-align:left;font-weight: bold;color: white !important;background-color: #3C4F36 !important;">
+2020-10-18 01:51:54
+</td>
+</tr>
+</tbody>
+</table>
+<p>There is a limiting factor here, we are only able to extract approx. 3200 of President Trump’s tweets, believe it or not that’s only less than one month of tweets from 09/25/2020 to 10/17/2020.</p>
+<p>First I am going to make a wordcloud, there is some words that need be filter and I will include them in the filter statement below.</p>
+<pre class="r"><code>Wordcloud &lt;- TrumpTweetsClean %&gt;% 
+            unnest_tokens(word,text) %&gt;%
+            anti_join(stop_words) %&gt;%
+            filter(!word %in%c(&quot;t.co&quot;, &quot;https&quot;,  &quot;twitter&quot;, &quot;iphone&quot;, &quot;amp&quot;, &quot;rt&quot;, &quot;android&quot;, 
+                               &quot;it&#39;s&quot;,&quot;i&#39;m&quot;,&quot;2&quot;, &quot;1&quot;)) %&gt;%
+            group_by(word) %&gt;%
+            summarise(n=n()) %&gt;%
+            arrange(desc(n)) %&gt;%
+            top_n(100,n) %&gt;% 
+            wordcloud2()
+
+Wordcloud</code></pre>
+<div id="htmlwidget-1" style="width:672px;height:480px;" class="wordcloud2 html-widget"></div>
+<script type="application/json" data-for="htmlwidget-1">{"x":{"word":["biden","realdonaldtrump","vote","joe","president","trump","win","people","iowa","randpaul","american","bidencrimefamily","country","election","maga","party","4","america","chinese","florida","hunter","ready","seniors","support","carolina","china","corrupt","fake","georgia","house","media","north","patriots","politician","sleepy","story","thousands","watch","white","10","2nd","amendment","days","family","hardworking","loyal","michigan","million","nypost","obama","protect","republicans","voting","wars","wins","corruption","crime","crowd","democrats","denver","didn’t","facebook","god","law","left","life","lying","news","night","pay","pelosi","premiums","republican","save","scully","sign","steve","tax","taxes","tech","totally","true","winning","wisconsin","20","attention","bad","ballots","ben","book","breitbartnews","campaign","can’t","care","chance","coming","communist","coronavirus","cspan","debate","democrat","email","emails","endless","fight","firm","forward","giant","gsfsgh2kpc","hall","hard","harvesting","healthcare","hillary","history","home","introductions","joebiden","land","macon","massive","mistake","mzhemingway","nc","nebraska","ny","peace","polls","questions","radical","red","run","section","security","senator","senators","strong","term","terrible","thread","time","trump2020","warrior","wave","week","world"],"freq":[44,35,23,21,21,17,16,14,13,13,12,9,9,9,8,8,7,7,7,7,7,7,7,7,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3],"fontFamily":"Segoe UI","fontWeight":"bold","color":"random-dark","minSize":0,"weightFactor":4.09090909090909,"backgroundColor":"white","gridSize":0,"minRotation":-0.785398163397448,"maxRotation":0.785398163397448,"shuffle":true,"rotateRatio":0.4,"shape":"circle","ellipticity":0.65,"figBase64":null,"hover":null},"evals":[],"jsHooks":[]}</script>
+<p>Its kind of hard to read this word cloud, obviously the words Biden, Trump and Joe are the most commonly used but lets look at the top 15 words in these tweets.</p>
+<pre class="r"><code>TrumpTweetsClean %&gt;% 
+            unnest_tokens(word,text) %&gt;%
+            anti_join(stop_words) %&gt;%
+            filter(!word %in%c(&quot;t.co&quot;, &quot;https&quot;,  &quot;twitter&quot;, &quot;iphone&quot;, &quot;amp&quot;, &quot;rt&quot;, &quot;android&quot;, 
+                               &quot;it&#39;s&quot;,&quot;i&#39;m&quot;,&quot;2&quot;, &quot;1&quot;, &quot;realdonaldtrump&quot;)) %&gt;%
+            group_by(word) %&gt;%
+            summarise(n=n()) %&gt;%
+            arrange(desc(n)) %&gt;%
+            top_n(15,n) %&gt;%
+            ggplot(aes(x=fct_reorder(word,n), y=n)) + geom_col(stat = &quot;identity&quot;) + coord_flip() +
+            geom_text(aes(label = n), position = position_dodge(0.5), hjust = 0) + labs (x= &quot;Word&quot;, y= &quot;Word Count&quot;)</code></pre>
+<p><img src="/post/2020-10-17-analyzing-president-trump-s-tweets_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
+<p>Noe lets look at some bi-grams, and see what frequent two words are appearing.</p>
+<pre class="r"><code>bigram_freq &lt;- TrumpTweetsClean %&gt;%
+               unnest_tokens(bigram, text, 
+                   token = &quot;ngrams&quot;, n = 2) %&gt;%
+               separate(bigram, c(&quot;word1&quot;, &quot;word2&quot;), sep = &quot; &quot;) %&gt;%
+               filter(!word1 %in% stop_words$word) %&gt;%
+               filter(!word2 %in% stop_words$word) %&gt;%
+               filter(!word1 %in% c(&quot;t.co&quot;, &quot;https&quot;, &quot;false&quot;, &quot;twitter&quot;, &quot;iphone&quot;, &quot;amp&quot;, &quot;rt&quot;, &quot;android&quot;,
+                                    &quot;realdonaldtrump&quot;)) %&gt;%
+               filter(!word2 %in% c(&quot;t.co&quot;, &quot;https&quot;, &quot;false&quot;, &quot;twitter&quot;, &quot;iphone&quot;, &quot;amp&quot;, &quot;rt&quot;, &quot;android&quot;,
+                                    &quot;realdonaldtrump&quot;)) %&gt;%
+               filter(!str_detect(word1,&quot;^\\d&quot;)) %&gt;% 
+               filter(!str_detect(word2,&quot;^\\d&quot;))%&gt;%
+               mutate(bigram = str_c( word1, word2, sep = &quot; &quot;)) %&gt;%
+               count(bigram, word1, word2, sort=TRUE) 
+
+top_100 &lt;- bigram_freq %&gt;%
+           select(bigram,n) %&gt;%
+           arrange(desc(n)) %&gt;%
+           top_n(100,n) 
+top_100 %&gt;% wordcloud2()</code></pre>
+<div id="htmlwidget-2" style="width:672px;height:480px;" class="wordcloud2 html-widget"></div>
+<script type="application/json" data-for="htmlwidget-2">{"x":{"word":["joe biden","hunter biden","north carolina","sleepy joe","corrupt politician","loyal hardworking","white house","obama biden","steve scully","american patriots","american people","hardworking american","radical left","red wave","american heartland","american seniors","approval rating","ballot harvesting","ben sasse","biden demanded","biden harris","biden wins","billionaire pay","brave soldiers","chinese billionaire","chinese communist","chinese energy","communist party","coronavirus vaccine","crooked hillary","demanded chinese","endless wars","energy firm","foreign wars","giant crowd","god bless","hardworking iowa","hillary clinton","iowa patriots","law enforcement","macon georgia","mainstream media","nancy pelosi","nbcnews town","president trump","republican party","social security","tax hike","town hall","trump save","trump2020 kag","vote election2020","vote maga","vote trump","wave coming","win iowa","wins china","a.m enjoy","absentee ballots","administration stands","affordable protect","agree republicans","aka election","aliens raise","allegedly involving","allenwest southern","amateur hour","amendment vote","america wins","american blood","american worker","americans ballot","amy coney","answer questions","anytime joebiden","approved directly","attention joebiden","attention mailinballotfraud","az premiums","backfired dm","bad interview","bad week","banning today's","begun happening","beloved president","biden bidencrimefamily","biden can’t","biden continue","biden corroborates","biden crime","biden depression","biden email","biden emails","biden exposé","biden family","biden laptop","biden lied","biden linked","biden nc","biden news","biden nv","biden offered","biden refuses","biden shipped","biden’s house","bidencrimefamily trump2020","bidencrimefamily whereshunter","biggest mistake","biggest tax","bills didn’t","black community","blacksfortrump nope","blm bidencrimefamily","blockbuster story","bob corker","bogus russia","bombshell nypost","bombshell prompted","borders release","boris johnson","breaking boris","bring forward","brought home","burisma biden","business dealings","businesses owned","busy printing","cable news","california taxes","call leaked","calls transcripts","can’t call","can’t lose","can’t stand","cancer survivor","care savings","care support","career politicians","carolina it’s","carolina wins","caught jack","ccp records","censors judiciarygop","censorship campaign","channels carry","check true","china stealing","china wins","chinese corporations","chosen narrative","chris wray","clinton winning","collusion hoax","coloradodems party","communications director","communist china","completely blocked","coney barrett","conference call","conspiracy theory","continue bleeding","cool sounds","corrupt political","corruption president","corruption surrounding","couldn’t care","country biden","country dry","country he’s","country’s history","county minority","courageous warrior","court nominee","cowboy hats","crime bills","crime family","crime syndicate","criminal aliens","criminal enterprise","cspan indefinitely","customs union","dallas county","damage control","darrell issa","davereaboi biden","deal involving","debate whereshunter","defeat joe","defend vulnerable","democrat mayor","democrat party","democrat socialists","democratic party","dems agree","denver shooting","denverpolice claim","departments dissolve","didn’t start","didn’t support","director admitted","discredited witch","djt msm","dm hunterbiden","doesn’t support","dolloff denverpolice","don’t win","drive god","earlyvoting begins","earlyvoting vote","economic life","economy anytime","educating voters","effective coronavirus","election day","election meddling","election poll","election2020 leadright","elliotte yesterday","email bombshell","email thread","emails meetings","emails related","empower violent","endless foreign","enthusiasm massive","enthusiastic crowd","entire network","eu’s single","event growing","excellent justice","exec committee","existing conditions","extended sequence","extra ballots","facebook communications","facebook election","factories threw","fair election","fake illegal","fake nbcnews","fake news","fake trending","falsely accused","fame hypocrisyhof","family’s business","fast vote","fight hard","final push","final rcp","finally realize","flake flake","fleeing california","florida enjoy","florida starts","folding pizza","fort myers","forum live","fracking destroy","fraudulent stories","friends family","ga maga","gamebredfighter maga","generals sign","giant red","gods courageous","goodness righteousness","government granted","gracefully retire","grass roots","greenville north","grieving family","growing louder","gstephanopoulos didn’t","gun emails","hall forum","happen sooner","happening fast","hard republicans","harvesting let’s","harvesting paying","hats denver","health care","healthcare affordable","heart breaks","heroes crookedjoebiden","hey quid","holdtexas keeptexasred","holy spirit","home stretch","home thousands","house maga","how’s steve","huge win","hunterbiden bidencrimefamily","hypocrisy hall","ignoring evidence","illegal ballots","illegally harvesting","immediately release","immediately strip","improper behavior","individuals supernecessary","influence peddling","inglorious path","insane bigtechcensorship","intellectual property","involving hunter","involving joe","iowa maga","it’s revealed","jacks doubles","jason wrote","jobs dismantle","jobs shut","joe biden’s","joe bidencrimefamily","joe bragged","joebiden mentioned","johnson letter","jorge you’re","journalistic integrity","joyful smile","keeptexasred wearethestorm","keltner's family","kris jacks","lamestream media","largest organized","leadright holdtexas","lee keltner","lee keltner's","left justices","legacy media","let’s hope","lexington ky","lg24321 randpaul","liddle bob","lied pennsylvania","lies joe","linked firm","live tonight","living embodiment","louder anytime","loudly chanting","lower cost","lowlife loser","lucrative foreign","lying cheating","lying debate","macon ga","mafia exposing","maga superbowl","maga2020 trump2020","mailinballotfraud bidencrimefamily","major fake","major investments","makes crooked","massive corruption","massive damage","massive red","matt dolloff","mayor pray","media told","meetings phone","mi wi","military vets","million annually","million paid","million seniors","minority engagement","mooch sad","msm focus","muskegon michigan","myers florida","mzhemingway comment","mzhemingway davereaboi","mzhiqdfbam voteearly","nasty rumor","nathan simington","national security","nc premiums","negative biden","news channels","news reporters","night’s nbcnews","normal life","nursing homes","nv premiums","ny post","ny times","nypost story","nypost watch","obama conference","ocala florida","organized crime","outrageous conspiracy","parnell asap","party exec","pay people","paying attention","paying cash","pelosi couldn’t","pelosi puppet","people mentioned","people shines","people understand","personal experience","phone calls","pilfered bits","pizza boxes","police departments","political class","politician disgraceful","politician repeal","politician that’ll","poll watcher","polling averages","polls educating","potus maga2020","pour peace","pre existing","precious loved","preferred candidate","pres trump","president biden","president donald","president gods","president joebidenukrainescandal","printing extra","pro joe","prompted massive","protect people","protect social","protect terrorists","provided health","public square","puppet vote","quid pro","racisttrump blacksfortrump","randpaul miamijj48","randpaul qarriorp","rapid censorship","rcp polling","realdonaldtrump⁩ womenfortrump⁩","recently won","records related","reed elliotte","release criminal","removing retweets","repeal section","reported news","republican senators","rest home","retire sensasse","returns nypost","rigged steve","righteousness selflessness","ron johnson","rudygiuliani single","russia story","russian collusion","sacrificing american","sbagov loans","science doesn’t","science people","scotus dems","sean parnell","security threat","selflessness love","senator paul","senators liddle","senior citizens","seniors az","severe vote","shadow banning","simington senatorwicker","simple choice","single handily","single market","sit idly","slow spread","smoking gun","son brother","son hunter","southern dallas","spirit pour","square miles","stealing intellectual","stretch biden","strong talking","suddenly worry","super predator","support gamebredfighter","support healthcare","support peace","supports blm","supreme court","surge normal","surrounding sleepy","survivor reed","taking advantage","tax cuts","tax returns","taxes confiscate","taxes weak","teamtrump⁩ realdonaldtrump⁩","tech persists","term super","terrible injustices","texas voter","texasgop allenwest","that’ll vote","thebabylonbee wow","they’ll treat","thread allegedly","thread exposing","today's biden","total endorsement","totally agree","totally discredited","totally mixed","totally unelectable","trade agreement","treated fairly","trending section","true goodness","true vp","trump's strong","trump administration","trump campaign","trump election","trump recovery","trump relies","trump supporters","trump tax","trump teamtrump⁩","trump2020 kag2020","twitter’s fake","u.s senator","u.s troops","unelectable couldn’t","vet support","viable candidate","vice president","violent criminals","violent mobs","virginia vote","vote biden","vote darrell","vote rand","vote share","vote sign","voteearly vote","voter helpline","voters finally","voting begins","voting rights","vp biden","vulnerable americans","wars joe","wars vpdebate","watch career","watch coloradodems","watch gamebredfighter","watcher sign","wave visit","weak military","whereshunter bidencrimefamily","whereshunter trump2020","white liberals","win north","winning mi","witch hunt","womenfortrump⁩ danscavino⁩","wonderful guy","world including","world potus","world.our hearts","wouldn’t happen","wrong medicine","yuge biden"],"freq":[13,6,6,6,5,5,5,4,4,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],"fontFamily":"Segoe UI","fontWeight":"bold","color":"random-dark","minSize":0,"weightFactor":13.8461538461538,"backgroundColor":"white","gridSize":0,"minRotation":-0.785398163397448,"maxRotation":0.785398163397448,"shuffle":true,"rotateRatio":0.4,"shape":"circle","ellipticity":0.65,"figBase64":null,"hover":null},"evals":[],"jsHooks":[]}</script>
+<p>Like the wordcloud above this cool, but kind of hard to read, lets chart it the same way.</p>
+<pre class="r"><code>TrumpTweetsClean %&gt;%
+               unnest_tokens(bigram, text, 
+                   token = &quot;ngrams&quot;, n = 2) %&gt;%
+               separate(bigram, c(&quot;word1&quot;, &quot;word2&quot;), sep = &quot; &quot;) %&gt;%
+               filter(!word1 %in% stop_words$word) %&gt;%
+               filter(!word2 %in% stop_words$word) %&gt;%
+               filter(!word1 %in% c(&quot;t.co&quot;, &quot;https&quot;, &quot;false&quot;, &quot;twitter&quot;, &quot;iphone&quot;, &quot;amp&quot;, &quot;rt&quot;, &quot;android&quot;,
+                                    &quot;realdonaldtrump&quot;)) %&gt;%
+               filter(!word2 %in% c(&quot;t.co&quot;, &quot;https&quot;, &quot;false&quot;, &quot;twitter&quot;, &quot;iphone&quot;, &quot;amp&quot;, &quot;rt&quot;, &quot;android&quot;,
+                                    &quot;realdonaldtrump&quot;)) %&gt;%
+               filter(!str_detect(word1,&quot;^\\d&quot;)) %&gt;% 
+               filter(!str_detect(word2,&quot;^\\d&quot;))%&gt;%
+               mutate(bigram = str_c( word1, word2, sep = &quot; &quot;)) %&gt;%
+               count(bigram, word1, word2, sort=TRUE) %&gt;%
+               top_n(15,n) %&gt;%
+               ggplot(aes(x=fct_reorder(bigram,n), y=n)) + geom_col(stat = &quot;identity&quot;) + coord_flip() +
+               geom_text(aes(label = n), position = position_dodge(0.5), hjust = 0) + 
+               labs (x= &quot;Word&quot;, y= &quot;Word Count&quot;)</code></pre>
+<p><img src="/post/2020-10-17-analyzing-president-trump-s-tweets_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
+<p>Very intersting that we see North Carolina here. Before moving onto the sentiment analysis, lets see on what days does President Trump tweet the most!</p>
+<pre class="r"><code>TweetsbyDay &lt;- TrumpTweetsClean %&gt;% 
+               select(text, created_at) %&gt;%
+               mutate(day = format(created_at, format = &quot;%A&quot;)) %&gt;%
+               count(day) %&gt;%
+               ggplot(aes(x=fct_reorder(day,-n), y=n)) + geom_col(stat = &quot;identity&quot;) +
+               geom_text(aes(label = n), position = position_dodge(0.9), vjust = 0) + 
+               labs (x= &quot;Day&quot;, y= &quot;Number of Tweets&quot;)
+
+TweetsbyDay</code></pre>
+<p><img src="/post/2020-10-17-analyzing-president-trump-s-tweets_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
+<p>Now lets do some sentiment analysis, and find out which words President Trump uses in positive and negative terms.</p>
+<pre class="r"><code>TrumpTweetsClean %&gt;% unnest_tokens(word,text) %&gt;%
+                     anti_join(stop_words) %&gt;%
+                     filter(!word %in%c(&quot;t.co&quot;, &quot;https&quot;, &quot;false&quot;, &quot;twitter&quot;, &quot;iphone&quot;, 
+                                         &quot;amp&quot;, &quot;rt&quot;, &quot;android&quot;, &quot;it&#39;s&quot;,&quot;i&#39;m&quot;,&quot;2&quot;, &quot;1&quot;, &quot;realdonaldtrump&quot;)) %&gt;%
+                     group_by(word) %&gt;%
+                     summarise(n=n()) %&gt;%
+                     arrange(desc(n)) %&gt;%
+                     top_n(100,n) %&gt;%
+                     inner_join(get_sentiments(&quot;bing&quot;), by = &quot;word&quot;) %&gt;%
+                     group_by(sentiment) %&gt;%
+                     top_n(15,n) %&gt;%
+                     mutate(score = if_else(sentiment == &quot;positive&quot;, n, -n)) %&gt;%
+                     ggplot(aes(reorder(word,n),n , fill = sentiment)) + 
+                     geom_col() + 
+                     coord_flip() + 
+                     facet_wrap(~ sentiment, scales = &quot;free_y&quot;) + 
+                     labs(title = &quot;Top 10 Terms by Sentiment&quot;,
+                         x = &quot;term&quot;, y = &quot;score&quot;)</code></pre>
+<p><img src="/post/2020-10-17-analyzing-president-trump-s-tweets_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
+<p>We have the regular suspects here. Obviously we would expect words like fake, radical, bad and crime would have a negative sentiment attached with them. Now let’s move on to Topic Modeling. Topic Modeling is a method for unsupervised classification of documents(in this case tweets). It is very similar to clustering of numerical data.</p>
+<pre class="r"><code>tidy_lda_4 &lt;- tidy(tweets_lda_4, matrix = &quot;beta&quot;)
+tidy_lda_6 &lt;- tidy(tweets_lda_6, matrix = &quot;beta&quot;)
+tidy_lda_8 &lt;- tidy(tweets_lda_8, matrix = &quot;beta&quot;)
+tidy_lda_10 &lt;- tidy(tweets_lda_10, matrix = &quot;beta&quot;)
+tidy_lda_16 &lt;- tidy(tweets_lda_16, matrix = &quot;beta&quot;)
+
+topic_terms_4 &lt;- tidy_lda_4 %&gt;%
+               filter(!term %in% c(&quot;t.co&quot;, &quot;https&quot;, &quot;false&quot;, &quot;twitter&quot;, &quot;iphone&quot;, &quot;amp&quot;, &quot;rt&quot;, &quot;android&quot;, &quot;it&#39;s&quot;,
+                                 &quot;i&#39;m&quot;,&quot;2&quot;, &quot;1&quot;, &quot;realdonaldtrump&quot;, &quot;realdonaldtrump&#39;s&quot;)) %&gt;%
+               group_by(topic) %&gt;%
+               top_n(5, beta) %&gt;%
+               arrange(topic)
+
+topic_terms_4 %&gt;%
+  mutate(term = reorder(term, beta)) %&gt;%
+ggplot(aes(reorder(term, beta), beta, fill = as.factor(topic))) +
+  geom_col(show.legend = TRUE) +
+  facet_wrap(~ topic, scales = &quot;free_y&quot;) +
+  coord_flip() +
+  labs(title = &quot;4 Topics&quot;,
+       x = NULL, y = expression(beta))</code></pre>
+<p><img src="/post/2020-10-17-analyzing-president-trump-s-tweets_files/figure-html/unnamed-chunk-12-1.png" width="672" /></p>
+<pre class="r"><code>topic_terms_6 &lt;- tidy_lda_6 %&gt;%
+               filter(!term %in% c(&quot;t.co&quot;, &quot;https&quot;, &quot;false&quot;, &quot;twitter&quot;, &quot;iphone&quot;, &quot;amp&quot;, &quot;rt&quot;, &quot;android&quot;, &quot;it&#39;s&quot;,
+                                 &quot;i&#39;m&quot;,&quot;2&quot;, &quot;1&quot;, &quot;realdonaldtrump&quot;, &quot;realdonaldtrump&#39;s&quot;)) %&gt;%
+               group_by(topic) %&gt;%
+               top_n(5, beta) %&gt;%
+               arrange(topic)
+
+topic_terms_6 %&gt;%
+  mutate(term = reorder(term, beta)) %&gt;%
+ggplot(aes(reorder(term, beta), beta, fill = as.factor(topic))) +
+  geom_col(show.legend = TRUE) +
+  facet_wrap(~ topic, scales = &quot;free_y&quot;) +
+  coord_flip() +
+  labs(title = &quot;6 Topics&quot;,
+       x = NULL, y = expression(beta))</code></pre>
+<p><img src="/post/2020-10-17-analyzing-president-trump-s-tweets_files/figure-html/unnamed-chunk-12-2.png" width="672" /></p>
+<pre class="r"><code>topic_terms_8 &lt;- tidy_lda_8 %&gt;%
+               filter(!term %in% c(&quot;t.co&quot;, &quot;https&quot;, &quot;false&quot;, &quot;twitter&quot;, &quot;iphone&quot;, &quot;amp&quot;, &quot;rt&quot;, &quot;android&quot;, &quot;it&#39;s&quot;,
+                                 &quot;i&#39;m&quot;,&quot;2&quot;, &quot;1&quot;, &quot;realdonaldtrump&quot;, &quot;realdonaldtrump&#39;s&quot;)) %&gt;%
+               group_by(topic) %&gt;%
+               top_n(5, beta) %&gt;%
+               arrange(topic)
+
+topic_terms_8 %&gt;%
+  mutate(term = reorder(term, beta)) %&gt;%
+ggplot(aes(reorder(term, beta), beta, fill = as.factor(topic))) +
+  facet_wrap(~ topic, scales = &quot;free_y&quot;) +
+  geom_col(show.legend = TRUE) +
+  coord_flip() +
+  labs(title = &quot;8 Topics&quot;,
+       x = NULL, y = expression(beta))</code></pre>
+<p><img src="/post/2020-10-17-analyzing-president-trump-s-tweets_files/figure-html/unnamed-chunk-12-3.png" width="672" /></p>
+<pre class="r"><code>topic_terms_10 &lt;- tidy_lda_10 %&gt;%
+               filter(!term %in% c(&quot;t.co&quot;, &quot;https&quot;, &quot;false&quot;, &quot;twitter&quot;, &quot;iphone&quot;, &quot;amp&quot;, &quot;rt&quot;, &quot;android&quot;, &quot;it&#39;s&quot;,
+                                 &quot;i&#39;m&quot;,&quot;2&quot;, &quot;1&quot;, &quot;realdonaldtrump&quot;, &quot;realdonaldtrump&#39;s&quot;)) %&gt;%
+               group_by(topic) %&gt;%
+               top_n(5, beta) %&gt;%
+               arrange(topic)
+
+topic_terms_10 %&gt;%
+  mutate(term = reorder(term, beta)) %&gt;%
+ggplot(aes(reorder(term, beta), beta,fill = as.factor(topic))) +
+  facet_wrap(~ topic, scales = &quot;free_y&quot;) +
+  geom_col(show.legend = TRUE) +
+  coord_flip() +
+  labs(title = &quot;10 Topics&quot;,
+       x = NULL, y = expression(beta)) </code></pre>
+<p><img src="/post/2020-10-17-analyzing-president-trump-s-tweets_files/figure-html/unnamed-chunk-12-4.png" width="672" /></p>
+<pre class="r"><code>topic_terms_16 &lt;- tidy_lda_16 %&gt;%
+               filter(!term %in% c(&quot;t.co&quot;, &quot;https&quot;, &quot;false&quot;, &quot;twitter&quot;, &quot;iphone&quot;, &quot;amp&quot;, &quot;rt&quot;, &quot;android&quot;, &quot;it&#39;s&quot;,
+                                 &quot;i&#39;m&quot;,&quot;2&quot;, &quot;1&quot;, &quot;realdonaldtrump&quot;, &quot;realdonaldtrump&#39;s&quot;)) %&gt;%
+               group_by(topic) %&gt;%
+               top_n(5, beta) %&gt;%
+               arrange(topic)
+
+topic_terms_16 %&gt;%
+  mutate(term = reorder(term, beta)) %&gt;%
+ggplot(aes(reorder(term, beta), beta, fill = as.factor(topic))) +
+  geom_col(show.legend = TRUE) +
+  facet_wrap(~ topic, scales = &quot;free_y&quot;) +
+  coord_flip() +
+  labs(title = &quot;16 Topics&quot;,
+       x = NULL, y = expression(beta))</code></pre>
+<p><img src="/post/2020-10-17-analyzing-president-trump-s-tweets_files/figure-html/unnamed-chunk-12-5.png" width="672" /></p>
+<p>There’s a lot to process here, I am not a huge fan of the 16 topics chart but I think the 8 and 10 are very helpful. I am not going to comment on what each of these topics mean. I think that would be hard but this will give us an idea of what he is thinking and tweeting about on a daily basis.</p>
+<p>To conclude, this was a very fun blogspot I can’t wait to see what Vice President Joe Biden has to say, as always I want to reiterate that the point of this blog isn’t to influence your decision, however I am only trying to analytically understand what the President is trying convey to his followers via twitter.</p>
