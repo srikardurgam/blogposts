@@ -360,8 +360,9 @@ ggplot(aes(reorder(term, beta), beta,fill = as.factor(topic))) +
        x = NULL, y = expression(beta)) </code></pre>
 <p><img src="/post/2020-10-17-analyzing-president-trump-s-tweets_files/figure-html/unnamed-chunk-12-4.png" width="672" /></p>
 <pre class="r"><code>topic_terms_16 &lt;- tidy_lda_16 %&gt;%
-               filter(!term %in% c(&quot;t.co&quot;, &quot;https&quot;, &quot;false&quot;, &quot;twitter&quot;, &quot;iphone&quot;, &quot;amp&quot;, &quot;rt&quot;, &quot;android&quot;, &quot;it&#39;s&quot;,
-                                 &quot;i&#39;m&quot;,&quot;2&quot;, &quot;1&quot;, &quot;realdonaldtrump&quot;, &quot;realdonaldtrump&#39;s&quot;)) %&gt;%
+               filter(!term %in% c(&quot;t.co&quot;, &quot;https&quot;, &quot;false&quot;, &quot;twitter&quot;, &quot;iphone&quot;, &quot;amp&quot;, &quot;rt&quot;, 
+                                   &quot;android&quot;, &quot;it&#39;s&quot;,&quot;i&#39;m&quot;,&quot;2&quot;, &quot;1&quot;, &quot;realdonaldtrump&quot;,
+                                   &quot;realdonaldtrump&#39;s&quot;)) %&gt;%
                group_by(topic) %&gt;%
                top_n(5, beta) %&gt;%
                arrange(topic)

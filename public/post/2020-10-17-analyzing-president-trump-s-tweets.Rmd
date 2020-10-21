@@ -204,8 +204,8 @@ We have the regular suspects here. Obviously we would expect words like fake, ra
 tweets_dtm <- TrumpTweetsClean %>%
               unnest_tokens(word,text) %>%
               anti_join(stop_words) %>%
-              filter(!word %in%c("t.co", "https", "false", "twitter", "iphone", "amp", "rt", "android", "it's",
-                                 "i'm","2", "1", "realdonaldtrump", "realdonaldtrump's")) %>%
+              filter(!word %in%c("t.co", "https", "false", "twitter", "iphone", "amp", "rt", 
+                                 "android", "it's","i'm","2", "1", "realdonaldtrump", "realdonaldtrump's"))%>%
               summarise(status_id, word) %>%
               count(status_id, word, sort=TRUE)
 
@@ -295,8 +295,9 @@ ggplot(aes(reorder(term, beta), beta,fill = as.factor(topic))) +
        x = NULL, y = expression(beta)) 
 
 topic_terms_16 <- tidy_lda_16 %>%
-               filter(!term %in% c("t.co", "https", "false", "twitter", "iphone", "amp", "rt", "android", "it's",
-                                 "i'm","2", "1", "realdonaldtrump", "realdonaldtrump's")) %>%
+               filter(!term %in% c("t.co", "https", "false", "twitter", "iphone", "amp", "rt", 
+                                   "android", "it's","i'm","2", "1", "realdonaldtrump",
+                                   "realdonaldtrump's")) %>%
                group_by(topic) %>%
                top_n(5, beta) %>%
                arrange(topic)

@@ -5,7 +5,16 @@
     <link>/post/</link>
     <description>Recent content in Posts on Srikar Durgam</description>
     <generator>Hugo -- gohugo.io</generator>
-    <lastBuildDate>Sat, 17 Oct 2020 00:00:00 +0000</lastBuildDate><atom:link href="/post/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 21 Oct 2020 00:00:00 +0000</lastBuildDate><atom:link href="/post/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Visualizing COVID-19 Data </title>
+      <link>/post/visualizing-covid-19-data/</link>
+      <pubDate>Wed, 21 Oct 2020 00:00:00 +0000</pubDate>
+      
+      <guid>/post/visualizing-covid-19-data/</guid>
+      <description>In this blogpost I will try to recreate some of the visualization I have been seeing on the internet. I want to thank Michael Clark for writing some of the fucntions I will be reusing here to recreate the visualzations.</description>
+    </item>
+    
     <item>
       <title>Analyzing President Trump&#39;s Tweets</title>
       <link>/post/analyzing-president-trump-s-tweets/</link>

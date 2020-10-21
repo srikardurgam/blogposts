@@ -1,0 +1,592 @@
+---
+title: 'Visualizing COVID-19 Data '
+author: Srikar Durgam
+date: '2020-10-21'
+slug: visualizing-covid-19-data
+categories: []
+tags:
+  - COVID
+---
+In this blogpost I will try to recreate some of the visualization I have been seeing on the internet. I want to thank Michael Clark for writing some of the fucntions I will be reusing here to recreate the visualzations. The fucntions used can be accessed here. The data comes from three main sources: (1) John Hopkins, (2) New York Times (3) Open Data Covid Project. In this blog I will try to identify trends across the world and in the United States and then create a heat map with all the counties. 
+Like I mentioned previously I own huge debt a graditute to [Michael Clark](https://m-clark.github.io/) and his data scrappting fucntions which do the majority of the heavy lifiting here. I am just merely resetting his work with the most upto date data, while learning about functions and visualizations along the way. 
+
+First lets load in out libraries and the data, the first function name is read_jh_covid_data, which pulls in the most recent data available in the John Hopkins Open Source COVID dashboard, next we pull data from the New York Times where it has data from all across the US to the state and county level. 
+```{r message=FALSE, warning=FALSE, include=FALSE}
+# Preliminaries -----------------------------------------------------------
+
+library(tidyverse) # required for functions
+
+
+read_open_covid_data <- function(
+  country = NULL,     # Filter to specific country
+  current = FALSE,    # Only the current data
+  totals  = FALSE     # Only totals (no regional)
+) {
+  
+  if (current) {
+    data = readr::read_csv('https://open-covid-19.github.io/data/data_latest.csv',
+                           col_types = 'Dcccccddddd')
+  }
+  else {
+    data = read_csv('https://open-covid-19.github.io/data/data.csv',
+                    col_types = 'Dcccccddddd')
+  }
+  
+  if (!is.null(country)) {
+    data = filter(data, CountryCode == country | CountryName == country)
+  }
+  
+  # other cleanup and additions
+  data = data %>% 
+    rename(
+      country_code = CountryCode,
+      country_name = CountryName,
+      region_code  = RegionCode,
+      region_name  = RegionName,
+      total_confirmed = Confirmed,
+      total_deaths    = Deaths
+    ) %>% 
+    rename_all(tolower) %>% 
+    group_by(country_code, region_code) %>% 
+    mutate(
+      total_deaths    = ifelse(is.na(total_deaths), 0, total_deaths),
+      daily_confirmed = total_confirmed - lag(total_confirmed),
+      daily_deaths    = total_deaths - lag(total_deaths),
+      region_name     = if_else(region_name == 'South Caroline', 'South Carolina', region_name),
+      death_rate      = total_deaths/total_confirmed
+    ) %>% 
+    mutate_at(vars(contains('daily')), function(x) ifelse(is.na(x), 0, x)) %>% 
+    select(date:region_name, contains('daily'), contains('total'), death_rate, everything()) %>% 
+    ungroup()
+  
+  if (totals) data = filter(data, is.na(region_code))
+  
+  ungroup(data)
+}
+
+read_jh_covid_data <- function(
+  first_date = lubridate::mdy('01-22-2020'),
+  last_date  = Sys.Date() - 1,
+  country_state = NULL,     # country if global data, state if US
+  include_regions = FALSE,  # for world data, include province/state specific data?
+  us         = FALSE,
+  wider      = TRUE
+) {
+  
+  if (!us) {
+    cleanup_global = function(data) {
+      data = data %>% 
+        pivot_longer(
+          -c(`Province/State`, `Country/Region`, Lat, Long),
+          names_to = 'date',
+          values_to = 'count'
+        ) %>% 
+        mutate(
+          date = lubridate::mdy(date),
+          Lat = round(Lat, 4),
+          Long = round(Long, 4),   # because of odd insertion of extreme decimal values for some places (e.g. UK)
+        ) %>%  
+        rename(
+          province_state = `Province/State`,
+          country_region = `Country/Region`,
+        ) %>% 
+        rename_all(tolower)
+    }
+    
+    init_confirmed  = readr::read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv')
+    init_deaths  = readr::read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv')
+    init_recovered  = readr::read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_recovered_global.csv')
+    
+    data = map_df(
+      list(
+        init_confirmed, 
+        init_deaths, 
+        init_recovered
+      ),
+      cleanup_global,
+      .id = 'type') %>% 
+      mutate(type = factor(type, 
+                           labels = c(
+                             'confirmed', 
+                             'deaths', 
+                             'recovered'
+                           )))
+    
+    if (!is.null(country_state))
+      data = data %>% filter(country_region == country_state)
+    
+    if (!include_regions) {
+      
+      # fix can, chin, aus by creating an 'NA' for total counts
+      can_chin_aus = data %>% 
+        filter(country_region %in% c('Australia', 'Canada', 'China')) %>% 
+        group_by(type, country_region, date) %>% 
+        summarise(count = sum(count)) %>% 
+        mutate(lat = NA, long = NA)
+      
+      data = data %>% 
+        filter(is.na(province_state)) %>%
+        select(-province_state) %>% 
+        bind_rows(can_chin_aus)
+    }
+  }
+  
+  if (us) {
+    
+    cleanup_us = function(data) {
+      data = data %>% 
+        pivot_longer(
+          -c(UID:Combined_Key),
+          names_to = 'date',
+          values_to = 'count'
+        ) %>% 
+        mutate(date = lubridate::mdy(date)) %>%  
+        rename(
+          province_state = Province_State,
+          country_region = Country_Region,
+        ) %>% 
+        rename_all(tolower)
+    }
+    
+    init_confirmed  = readr::read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv')
+    init_deaths  = readr::read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_US.csv')
+    
+    data = map_df(list(init_confirmed, init_deaths), cleanup_us, .id = 'type') %>%
+      mutate(type = factor(type, labels = c('confirmed', 'deaths')))
+    
+    data = data %>%  
+      rename(
+        county = admin2,
+        state  = province_state,
+        long   = long_
+      ) %>% 
+      filter(
+        country_region == 'US',
+        !state %in% c(
+          'Puerto Rico',
+          'Guam',
+          'Northern Mariana Islands',
+          'American Samoa',
+          'Wuhan Evacuee',
+          'Virgin Islands',
+          'Grand Princess',
+          'Diamond Princess'
+        )
+      )
+    
+    if (!is.null(country_state))
+      data = data %>% filter(state == country_state)
+  }
+  
+  if (wider) {
+    data = data %>%  
+      pivot_wider(values_from = count, names_from = type) 
+  }
+  
+  data
+}
+
+
+read_nyt_data <- function(states = TRUE) {
+  if (states) {
+    us_states0 <- readr::read_csv(
+      "https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-states.csv",
+      col_types = 'Dccdd'
+    )
+    
+    data = us_states0 %>%
+      filter(!state %in% c(
+        'Puerto Rico',
+        'Guam',
+        'Northern Mariana Islands',
+        'Virgin Islands',
+        'American Samoa')
+      ) %>% 
+      arrange(state, date) %>%
+      group_by(state) %>%
+      mutate(
+        daily_cases = cases - lag(cases, default = NA),
+        daily_cases = if_else(is.na(daily_cases), cases, daily_cases),
+        daily_deaths = deaths - lag(deaths, default = NA),
+        daily_deaths = if_else(is.na(daily_deaths), deaths, daily_deaths)
+      ) %>% 
+      ungroup() %>% 
+      left_join(tibble(state = state.name, state_abb = state.abb)) %>% 
+      mutate(state_abb = as.factor(state_abb))
+  }
+  else {
+    counties0 <- readr::read_csv(
+      "https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv",
+      col_types = 'Dcccdd'
+    )
+    
+    data = counties0 %>%
+      filter(!state %in% c(
+        'Puerto Rico',
+        'Guam',
+        'Northern Mariana Islands',
+        'Virgin Islands',
+        'American Samoa')
+      ) %>% 
+      arrange(state, date) %>%
+      group_by(state, county) %>%
+      mutate(
+        daily_cases = cases - lag(cases, default = NA),
+        daily_cases = if_else(is.na(daily_cases), cases, daily_cases),
+        daily_deaths = deaths - lag(deaths, default = NA),
+        daily_deaths = if_else(is.na(daily_deaths), deaths, daily_deaths)
+      ) %>% 
+      ungroup() %>% 
+      left_join(tibble(state = state.name, state_abb = state.abb)) %>% 
+      mutate(state_abb = as.factor(state_abb))
+  }
+  
+  data
+}
+
+```
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)  
+library(gganimate)
+library(ggrepel)
+library(scico)
+library(highcharter)
+library(geofacet)
+library(statebins)
+```
+
+```{r message=FALSE, warning=FALSE}
+countries <-  read_jh_covid_data() #Country Level Data
+
+world_totals <- countries %>% 
+  group_by(country_region) %>% 
+  filter(date == max(date))
+
+us = read_nyt_data() #US level Data
+
+us_current <- us %>% 
+  filter(date == max(date)) #State Level data as of Max Dat
+
+county_trends <- read_nyt_data(states = FALSE)
+
+countries_oc <- read_open_covid_data() %>% 
+  filter(is.na(region_code))
+```
+
+
+```{r message=FALSE, warning=FALSE}
+highlight <- c(
+  'US',
+  'China',
+  'Japan',
+  'Korea, South',
+  'Italy',
+  'India',
+  'United Kingdom',
+  'France',
+  'Germany',
+  'Spain'
+)
+
+world <- countries %>%
+  group_by(date) %>%
+  summarise(confirmed = sum(confirmed, na.rm = T))
+```
+
+```{r message=FALSE, warning=FALSE}
+WorldPlot <- countries %>% 
+  ggplot(aes(x = date, y = confirmed)) +
+  geom_path(aes(group = country_region), alpha = .005) +
+  geom_point(
+    aes(),
+    size  = 5,
+    alpha = .1,
+    data  = world
+  ) +
+  geom_point(
+    aes(color = country_region),
+    size  = 1,
+    alpha = .5,
+    data  = filter(countries, country_region %in% highlight)
+  ) +
+  geom_text_repel(
+    aes(label = country_region, color = country_region),
+    size  = 2,
+    alpha = .85,
+    data  = filter(countries, country_region %in% highlight, date == max(date)-1),
+    show.legend = FALSE
+  ) +
+  scale_color_scico_d(begin = .1, end = .9) +
+  scale_x_date(
+    date_breaks = '2 weeks',
+    labels = function(x) format(x, format = "%m/%d")
+  ) +
+  scale_y_continuous(
+    position = "right",
+    trans    = 'log',
+    breaks   = c(50, unlist(map(c(1,5), function(x) x*10^(2:6)))), 
+    labels   = scales::comma
+  ) +
+  visibly::theme_clean() + 
+  labs(
+    x = '', 
+    y = '',
+    subtitle =  'Total Confirmed Cases',
+    caption  = 'Darker Shade: World Total Cases'
+    ) +
+  theme(
+    axis.text.x  = element_text(size = 6),
+    axis.text.y  = element_text(size = 6),
+    axis.title.y = element_text(size = 6),
+    axis.ticks.y = element_blank(),
+    legend.title       = element_blank(),
+    legend.key.size    = unit(.25, 'cm'),
+    legend.text        = element_text(size = 6),
+    legend.box.spacing = unit(0, 'mm'),
+    legend.box.margin  = margin(0),
+    legend.position    = 'left',
+    title = element_text(size = 12)
+  )
+WorldPlot
+```
+
+Looks like India and US are neck and neck and if the current trend continues India might overtake US in total confirmed cases. Now let's try to create a timeline style heatmap for total confirmed cases for the top 20 countries in the world. 
+
+```{r}
+top_20 <- world_totals  %>% 
+  ungroup() %>% 
+  top_n(20, confirmed) %>% 
+  arrange(desc(confirmed))
+ 
+
+plot_data <- countries %>%
+  filter(country_region %in% top_20$country_region) %>%
+  group_by(country_region) %>% 
+  mutate(
+    daily_confirmed = confirmed - lag(confirmed),
+    daily_confirmed = if_else(is.na(daily_confirmed), confirmed, daily_confirmed)
+  ) %>% 
+  ungroup() %>% 
+  mutate(
+    country_region   = ordered(country_region, levels = rev(top_20$country_region)),
+    line_positions = as.numeric(country_region) + .5,
+    line_positions = ifelse(line_positions == max(line_positions), NA, line_positions)
+  ) 
+  
+plt <- plot_data %>% 
+  ggplot(aes(x = date, y = country_region)) +
+  geom_tile(
+    aes(
+      fill   = daily_confirmed,
+      width  = .9,
+      height = 0.5
+    ),
+    na.rm = T,
+    size  = 2
+  ) +
+  geom_hline(
+    aes(yintercept = line_positions),
+    color = 'gray92',
+    size  = .25
+  ) +
+  scale_fill_scico(
+    end = .75,
+    na.value = 'gray98',
+    palette  = 'lajolla',
+    trans    = 'log',
+    breaks   = c(5, 25, 100, 500, 2500)
+  ) +
+  labs(x = '', y = '') +
+  guides(fill = guide_legend(title = 'New Cases')) +
+  visibly::theme_clean() +
+  theme(
+    axis.ticks.y = element_blank(),
+    legend.text  = element_text(size = 6),
+    legend.title = element_text(size = 10)
+  )
+
+```
+
+```{r echo=FALSE}
+pal = scico::scico(500, palette = 'lajolla')
+fntltp <- JS(
+  "function(){
+  return this.point.x + ' ' +  this.series.yAxis.categories[this.point.y] + ':<br>' +
+  Highcharts.numberFormat(this.point.value, 2);
+}"
+)
+plotline <- list(
+  color = "#fde725",
+  value = 1963,
+  width = 2,
+  zIndex = 5,
+  label = list(
+    text = "Vaccine Intoduced",
+    verticalAlign = "top",
+    style = list(color = "#606060"),
+    textAlign = "left",
+    rotation = -45,
+    y = -5
+  )
+)
+plot_data %>% 
+  mutate(date = str_sub(date, start = 6)) %>% 
+  filter(confirmed > 0) %>% 
+  hchart(
+    "heatmap",
+    hcaes(x = date, y = country_region, value = confirmed),
+    borderWidth = .25,
+    borderColor = '#fff') %>%
+  hc_colorAxis(
+    stops = color_stops(100, pal),
+    type = "logarithmic",
+    max = 1e5
+  ) %>%
+  hc_yAxis(
+    
+    offset = 10,
+    tickLength = 0,  
+    lineWidth = 0,   
+    gridLineWidth = 1,
+    minorGridLineWidth = 0,
+    height = 500,
+    min.padding = .5,  
+    title = list(text = F),
+    labels = list(style = list(fontSize = "8px"))
+  ) %>% 
+  hc_xAxis(    
+    # reversed = TRUE,
+    # offset = 10,
+    tickLength = 0,
+    lineWidth = 0,
+    gridLineWidth = 0,
+    minorGridLineWidth = 0,
+    title = list(text = F),
+    labels = list(style = list(fontSize = "8px"), rotation = 45)
+  ) %>%
+  hc_tooltip(formatter = fntltp) %>% 
+  hc_title(text = "") %>%
+  hc_legend(
+    layout = "vertical",
+    verticalAlign = "middle",
+    align = "right",
+    valueDecimals = 0
+  ) %>% 
+  hc_size(height = 600)
+```
+Le's look at USA Trends. First I will filter for top 10 states, and then visualize their confirmed cases over time. 
+```{r}
+highlight <- us_current %>% 
+  top_n(10, cases) %>% 
+  pull(state_abb)
+
+us_total <- countries %>% 
+  filter(country_region == 'US') %>% 
+  rename(cases = confirmed)
+
+US_plot <- us %>% 
+  ggplot(aes(x = date, y = cases)) +
+  geom_path(aes(group = state), alpha = .01) +
+  geom_point(
+    aes(),
+    size  = 6,
+    alpha = .1,
+    data  = us_total
+  ) +
+  geom_point(
+    aes(color = state),
+    size  = .25,
+    alpha = .25,
+    data  = filter(us, state_abb %in% highlight)
+  ) +
+  geom_text_repel(
+    aes(label = state_abb, color = state),
+    size  = 2,
+    alpha = .85,
+    data  = filter(us_current, state_abb %in% highlight)
+  ) +
+  scale_color_scico_d(begin = .1, end = .9) +
+  scale_x_date(date_breaks = '6 weeks') +
+
+  scale_y_continuous(
+    position = "right",
+    trans    = 'log',
+    breaks   = c(50, unlist(map(c(1,5), function(x) x*10^(2:6)))), 
+    labels   = scales::comma
+    ) +
+  visibly::theme_clean() + 
+  labs(
+    x = '', 
+    y = '',
+    subtitle =  'USA Total Confirmed Cases',
+    caption = 'Large dots represents USA total cases'
+    ) +
+  theme(
+    axis.text.x  = element_text(size = 6),
+    axis.text.y  = element_text(size = 6),
+    axis.title.y = element_text(size = 6),
+    axis.ticks.y = element_blank(),
+    legend.title       = element_blank(),
+    legend.key.size    = unit(.25, 'cm'),
+    legend.text        = element_text(size = 6),
+    legend.box.spacing = unit(0, 'mm'),
+    legend.box.margin  = margin(0),
+    legend.position = 'left',
+    title = element_text(size = 12)
+  )
+US_plot
+
+plotly::ggplotly(US_plot)
+```
+
+CA, FL, GA, TX, NY,AZ, IL, TN, NY, TX AND NC are the top 10 states currently with the most confirmed cases in the US. 
+
+The above view does not really give us how other states are trending so I wanted to visualize all the states together, I stumbeled upon the geofacet library which allows us to look at the trend in a really cool. It visualizes all the states and places them in their corresponding location of the actual US map. Which is uber cool!
+
+```{r message=FALSE, warning=FALSE}
+us %>% 
+  filter(cases != 0, state != 'District of Columbia') %>%
+  ggplot(aes(date, cases, group = state)) +
+  geom_path(color = '#ff550080') +
+  labs(y = '', x = '') +
+  facet_geo(~state, scales = 'free') +
+  visibly::theme_clean() +
+  theme(
+    axis.text.x  = element_blank(),
+    axis.ticks.x = element_blank(),
+    axis.text.y  = element_text(size = 4),
+    strip.text   = element_text(size = 4),
+  )
+```
+
+Lastly lets look at total covid cases by state in a heatmap and as well as death rate. 
+
+```{r}
+us_current %>% 
+  filter(state != 'District of Columbia') %>%
+  statebins(
+    state_col = 'state',
+    value_col = "log(cases)",
+    palette   = "OrRd", 
+    direction = 1,
+    name = "Covid Counts (log)"
+  ) +
+  theme_statebins(base_size = 8)
+```
+
+New York, California Texas and Florida have some of the highest Covid cases. 
+
+```{r}
+us_current %>% 
+  mutate(death_rate = deaths/cases) %>% 
+  statebins(
+    state_col = 'state',
+    value_col = "death_rate",
+    palette   = "OrRd", 
+    direction = 1,
+    name = "Death Rate"
+  ) +
+  theme_statebins(base_size = 8)
+```
+New Jersey and Connecticut have the highest death rate in the United States.  
