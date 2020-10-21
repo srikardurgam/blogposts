@@ -353,7 +353,7 @@ WorldPlot
 
 Looks like India and US are neck and neck and if the current trend continues India might overtake US in total confirmed cases. Now let's try to create a timeline style heatmap for total confirmed cases for the top 20 countries in the world. 
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 top_20 <- world_totals  %>% 
   ungroup() %>% 
   top_n(20, confirmed) %>% 
@@ -408,7 +408,7 @@ plt <- plot_data %>%
 
 ```
 
-```{r echo=FALSE}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 pal = scico::scico(500, palette = 'lajolla')
 fntltp <- JS(
   "function(){
@@ -476,7 +476,7 @@ plot_data %>%
   hc_size(height = 600)
 ```
 Le's look at USA Trends. First I will filter for top 10 states, and then visualize their confirmed cases over time. 
-```{r}
+```{r message=FALSE, warning=FALSE}
 highlight <- us_current %>% 
   top_n(10, cases) %>% 
   pull(state_abb)
@@ -562,7 +562,7 @@ us %>%
 
 Lastly lets look at total covid cases by state in a heatmap and as well as death rate. 
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 us_current %>% 
   filter(state != 'District of Columbia') %>%
   statebins(
@@ -577,7 +577,7 @@ us_current %>%
 
 New York, California Texas and Florida have some of the highest Covid cases. 
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 us_current %>% 
   mutate(death_rate = deaths/cases) %>% 
   statebins(
