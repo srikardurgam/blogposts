@@ -7,10 +7,11 @@ categories: []
 tags:
   - COVID
 ---
-In this blogpost I will try to recreate some of the visualization I have been seeing on the internet. I want to thank Michael Clark for writing some of the fucntions I will be reusing here to recreate the visualzations. The fucntions used can be accessed here. The data comes from three main sources: (1) John Hopkins, (2) New York Times (3) Open Data Covid Project. In this blog I will try to identify trends across the world and in the United States and then create a heat map with all the counties. 
-Like I mentioned previously I own huge debt a graditute to [Michael Clark](https://m-clark.github.io/) and his data scrappting fucntions which do the majority of the heavy lifiting here. I am just merely resetting his work with the most upto date data, while learning about functions and visualizations along the way. 
+In this blogpost I will try to recreate some of the visualization I have been seeing on the internet. I want to thank Michael Clark for writing some of the functions I will be reusing here to recreate the visualizations. The functions used can be accessed here. The data comes from three main sources: (1) John Hopkins, (2) New York Times (3) Open Data Covid Project. In this blog I will try to identify trends across the world and in the United States and then create a heat map with all the counties. 
+Like I mentioned previously I owe a huge debt a gratitude to [Michael Clark](https://m-clark.github.io/) and his data scraping functions which do the majority of the heavy lifting here. I am just merely resetting his work with the most up to date data, while learning about functions and visualizations along the way. 
 
-First lets load in out libraries and the data, the first function name is read_jh_covid_data, which pulls in the most recent data available in the John Hopkins Open Source COVID dashboard, next we pull data from the New York Times where it has data from all across the US to the state and county level. 
+First lets load in our libraries and the data, the first function name is read_jh_covid_data, which pulls in the most recent data available in the John Hopkins Open Source COVID dashboard, next we pull data from the New York Times where it has data from all across the US to the state and county level. 
+
 ```{r message=FALSE, warning=FALSE, include=FALSE}
 # Preliminaries -----------------------------------------------------------
 
@@ -589,4 +590,5 @@ us_current %>%
   ) +
   theme_statebins(base_size = 8)
 ```
+
 New Jersey and Connecticut have the highest death rate in the United States.  
