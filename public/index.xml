@@ -5,7 +5,16 @@
     <link>/</link>
     <description>Recent content on Srikar Durgam</description>
     <generator>Hugo -- gohugo.io</generator>
-    <lastBuildDate>Wed, 21 Oct 2020 00:00:00 +0000</lastBuildDate><atom:link href="/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 30 Oct 2020 00:00:00 +0000</lastBuildDate><atom:link href="/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Second Presidential Debate Analysis</title>
+      <link>/post/second-presidential-debate-analysis/</link>
+      <pubDate>Fri, 30 Oct 2020 00:00:00 +0000</pubDate>
+      
+      <guid>/post/second-presidential-debate-analysis/</guid>
+      <description>In this blogpost, I will try to recreate some of the same things I tried in the first blogpost, however this time I plan on using a different sentiment dictionary as well as try to include some bi-gram analysis. As always, a disclaimer: my goal here isn’t to sway you in one direction or another, but only to provide an analytical view to what the candidates are saying.</description>
+    </item>
+    
     <item>
       <title>Visualizing COVID-19 Data </title>
       <link>/post/visualizing-covid-19-data/</link>

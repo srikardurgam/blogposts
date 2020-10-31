@@ -1,0 +1,184 @@
+---
+title: Second Presidential Debate Analysis
+author: Srikar Durgam
+date: '2020-10-30'
+slug: second-presidential-debate-analysis
+categories: []
+tags: []
+---
+
+In this blogpost, I will try to recreate some of the same things I tried in the [first blogpost](https://srikardatascience.netlify.app/post/first-presidetial-debate-analysis/), however this time I plan on using a different sentiment dictionary as well as try to include some bi-gram analysis. As always, a disclaimer: my goal here isn't to sway you in one direction or another, but only to provide an analytical view to what the candidates are saying. The dataset is from [kaggle](https://www.kaggle.com/headsortails/us-election-2020-presidential-debates?select=us_election_2020_2nd_presidential_debate.csv), and as a first step let's load in our libraries as our first step.
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(ggplot2)
+library(tidytext)
+library(topicmodels)
+library(wordcloud2)
+library(readr)
+library(ggthemes)
+library(textdata)
+library(kableExtra)
+library(plotly)
+library(wordcloud2)
+```
+
+```{r message=FALSE, warning=FALSE}
+debate <- read_csv("us_election_2020_2nd_presidential_debate.csv") 
+```
+
+First we will import our dataset and filter out all the portions where the debate moderator was speaking. Next thing I do is divide the entire debate into 4 time periods (think of this as each quarter) this way we can track sentiment over the duration of the debate. Because the debate lasted 90 minutes and allotted 10 minutes to the moderator (BTW She did an awesome job) I divide the entire time by 80 minutes to get an even four. First let's produce a wordcloud.  
+
+```{r message=FALSE, warning=FALSE}
+debate <-  debate %>%
+           filter(!str_detect(speaker,'Kristen Welker'),
+           !is.na(text)) %>% 
+           add_rownames() %>% 
+           mutate(time_periods = as.integer(rowname) %/% 80)
+```
+
+Below is sample output of the dataset, I added could of just to see if it was working properly. 
+
+```{r message=FALSE, warning=FALSE}
+debate %>% head(3) %>% 
+  kbl(booktabs = T) %>%
+  kable_classic(full_width = F, html_font = "Cambria") %>%
+  kable_styling() %>%
+  row_spec(0:3, bold = T, color = "white", background = "#3C4F36")
+```
+
+Wordcloud SZN, my fav :)
+
+
+```{r message=FALSE, warning=FALSE}
+Wordcloud <- debate %>% 
+            unnest_tokens(word,text) %>%
+            anti_join(stop_words) %>%
+            filter(!word %in%c("00", "that’s", "i’m", "it’s", "we’re", "he’s")) %>%
+            group_by(word) %>%
+            summarise(n=n()) %>%
+            arrange(desc(n)) %>%
+            top_n(100,n) %>% 
+            wordcloud2()
+
+Wordcloud
+```
+
+
+```{r message=FALSE, warning=FALSE}
+debate %>%  unnest_tokens(word,text) %>%
+            anti_join(stop_words) %>%
+            filter(!word %in%c("00", "that’s", "i’m", "it’s", "we’re", "he’s" )) %>%
+            group_by(word) %>%
+            summarise(n=n()) %>%
+            arrange(desc(n)) %>%
+            top_n(15,n) %>%
+            ggplot(aes(x=fct_reorder(word,n), y=n)) + geom_col(stat = "identity") + coord_flip() +
+            geom_text(aes(label = n), position = position_dodge(0.5), hjust = 0) + 
+            labs (x= "Word", y= "Word Count")
+```
+The only context word here us people, we really cant make much sense from "that's", "don't" and "they're". I think a bi-gram analysis of the words will be more useful here. Then lets try to chart the words. 
+
+```{r}
+bigram_freq <- debate %>%
+               unnest_tokens(bigram, text, 
+                   token = "ngrams", n = 2) %>%
+               separate(bigram, c("word1", "word2"), sep = " ") %>%
+               filter(!word1 %in% stop_words$word) %>%
+               filter(!word2 %in% stop_words$word) %>%
+               filter(!word1 %in% c( )) %>%
+               filter(!word2 %in% c( )) %>%
+               filter(!str_detect(word1,"null")) %>% 
+               filter(!str_detect(word2,"null"))%>%
+               filter(!str_detect(word1,"^\\d")) %>% 
+               filter(!str_detect(word2,"^\\d"))%>%
+               mutate(bigram = str_c( word1, word2, sep = " ")) %>%
+               count(bigram, word1, word2, sort=TRUE) 
+
+top_100 <- bigram_freq %>%
+           select(bigram,n) %>%
+           arrange(desc(n)) %>%
+           top_n(100,n) 
+top_100 %>% wordcloud2()
+```
+
+A couple of things with context here, they discussed the American people, oil industry, wall street and President Barack Obama. Now lets try to chart the bi-grams by each of the candidates. 
+
+Let's move on to sentiment analysis, last time I did this for the first debate someone suggested that I should include more sentiments other than just positive and negative. So I added eight other sentiments to track over the course of the debate and then break these down by each of the candidates. 
+
+```{r message=FALSE, warning=FALSE}
+debate_nrc_sentiment <- debate %>%
+                        unnest_tokens(word,text ) %>% 
+                        inner_join(get_sentiments("nrc")) 
+```
+
+```{r}
+Sentiment_split <- debate_nrc_sentiment %>% 
+                   count(word,sentiment) %>%
+                   group_by(sentiment) %>%
+                   arrange(desc(n)) %>%
+                   slice(1:5) %>% 
+                   ggplot(aes(x=reorder(word, n), y=n)) +
+                   geom_col(aes(fill=sentiment), show.legend = F) +
+                   facet_wrap(~sentiment, scales = "free_y") +
+                   theme(axis.text.x = element_text(angle=45, hjust=1)) +
+                   coord_flip() +
+                   theme_bw() +
+                   labs(x="Word", y="Count", title="Sentiment by most frequent words") 
+
+Sentiment_split
+```
+
+Now lets track the sentiment over the duration of the debate.
+
+```{r message=FALSE, warning=FALSE}
+Overall_Sentiment <- debate_nrc_sentiment %>% 
+                     count(time_periods,sentiment) %>%
+                     ggplot(aes(time_periods,n,color = sentiment)) +
+                     geom_line()+
+                     geom_point() +
+                     labs(title = "Sentiment of the debate over time") +
+                     facet_wrap(~sentiment,nrow = 2) +
+                     scale_color_tableau() +
+                     theme_fivethirtyeight()+
+                     theme(text =element_text(size = 12), legend.position = "none")
+Overall_Sentiment
+```
+
+Now let's track sentiment for each of the candidate, first lets try to do this for President Trump. 
+
+```{r message=FALSE, warning=FALSE}
+Trump_Sentiment <- debate_nrc_sentiment %>% 
+                   filter(speaker == "Donald Trump") %>% 
+                   count(time_periods,sentiment) %>% 
+                   ggplot(aes(time_periods,n,color = sentiment)) +
+                   geom_line()+
+                   geom_point() +
+                   labs(title = "Sentiment of the debate over time: President Donald Trump") +
+                   facet_wrap(~sentiment,nrow = 2) +
+                   scale_color_tableau() +
+                   theme_fivethirtyeight()+
+                   theme(text =element_text(size = 10), legend.position = "none")
+
+Trump_Sentiment
+```
+
+Now lets try to do the same for Vice President Joe Biden.
+
+```{r message=FALSE, warning=FALSE}
+Biden_Sentiment <- debate_nrc_sentiment %>% 
+                   filter(speaker == "Joe Biden") %>% 
+                   count(time_periods,sentiment) %>% 
+                   ggplot(aes(time_periods,n,color = sentiment)) +
+                   geom_line()+
+                   geom_point() +
+                   labs(title = "Sentiment of the debate over time: Vice President Joe Biden") +
+                   facet_wrap(~sentiment,nrow = 2) +
+                   scale_color_tableau() +
+                   theme_fivethirtyeight()+
+                   theme(text =element_text(size = 10), legend.position = "none")
+
+Biden_Sentiment
+```
+
+Overall this is the first time I tried to incorporate the NRC sentiment and added more sentiments to the analyis,I hope this provides some insights to the debate. This will be my last politcal post I really enjoyed working with the debate data and learned some new NLP techniques in R. I am also learning Python and will try to add some more things using python in the blog as well!

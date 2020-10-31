@@ -1,0 +1,229 @@
+---
+title: Second Presidential Debate Analysis
+author: Srikar Durgam
+date: '2020-10-30'
+slug: second-presidential-debate-analysis
+categories: []
+tags: []
+---
+
+<script src="/rmarkdown-libs/kePrint/kePrint.js"></script>
+<link href="/rmarkdown-libs/lightable/lightable.css" rel="stylesheet" />
+<script src="/rmarkdown-libs/htmlwidgets/htmlwidgets.js"></script>
+<link href="/rmarkdown-libs/wordcloud2/wordcloud.css" rel="stylesheet" />
+<script src="/rmarkdown-libs/wordcloud2/wordcloud2.js"></script>
+<script src="/rmarkdown-libs/wordcloud2/hover.js"></script>
+<script src="/rmarkdown-libs/wordcloud2-binding/wordcloud2.js"></script>
+
+
+<p>In this blogpost, I will try to recreate some of the same things I tried in the <a href="https://srikardatascience.netlify.app/post/first-presidetial-debate-analysis/">first blogpost</a>, however this time I plan on using a different sentiment dictionary as well as try to include some bi-gram analysis. As always, a disclaimer: my goal here isn’t to sway you in one direction or another, but only to provide an analytical view to what the candidates are saying. The dataset is from <a href="https://www.kaggle.com/headsortails/us-election-2020-presidential-debates?select=us_election_2020_2nd_presidential_debate.csv">kaggle</a>, and as a first step let’s load in our libraries as our first step.</p>
+<pre class="r"><code>library(tidyverse)
+library(ggplot2)
+library(tidytext)
+library(topicmodels)
+library(wordcloud2)
+library(readr)
+library(ggthemes)
+library(textdata)
+library(kableExtra)
+library(plotly)
+library(wordcloud2)</code></pre>
+<pre class="r"><code>debate &lt;- read_csv(&quot;us_election_2020_2nd_presidential_debate.csv&quot;) </code></pre>
+<p>First we will import our dataset and filter out all the portions where the debate moderator was speaking. Next thing I do is divide the entire debate into 4 time periods (think of this as each quarter) this way we can track sentiment over the duration of the debate. Because the debate lasted 90 minutes and allotted 10 minutes to the moderator (BTW She did an awesome job) I divide the entire time by 80 minutes to get an even four. First let’s produce a wordcloud.</p>
+<pre class="r"><code>debate &lt;-  debate %&gt;%
+           filter(!str_detect(speaker,&#39;Kristen Welker&#39;),
+           !is.na(text)) %&gt;% 
+           add_rownames() %&gt;% 
+           mutate(time_periods = as.integer(rowname) %/% 80)</code></pre>
+<p>Below is sample output of the dataset, I added could of just to see if it was working properly.</p>
+<pre class="r"><code>debate %&gt;% head(3) %&gt;% 
+  kbl(booktabs = T) %&gt;%
+  kable_classic(full_width = F, html_font = &quot;Cambria&quot;) %&gt;%
+  kable_styling() %&gt;%
+  row_spec(0:3, bold = T, color = &quot;white&quot;, background = &quot;#3C4F36&quot;)</code></pre>
+<table class=" lightable-classic table" style="font-family: Cambria; width: auto !important; margin-left: auto; margin-right: auto; margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;font-weight: bold;color: white !important;background-color: #3C4F36 !important;">
+rowname
+</th>
+<th style="text-align:left;font-weight: bold;color: white !important;background-color: #3C4F36 !important;">
+speaker
+</th>
+<th style="text-align:left;font-weight: bold;color: white !important;background-color: #3C4F36 !important;">
+minute
+</th>
+<th style="text-align:left;font-weight: bold;color: white !important;background-color: #3C4F36 !important;">
+text
+</th>
+<th style="text-align:right;font-weight: bold;color: white !important;background-color: #3C4F36 !important;">
+time_periods
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;font-weight: bold;color: white !important;background-color: #3C4F36 !important;">
+1
+</td>
+<td style="text-align:left;font-weight: bold;color: white !important;background-color: #3C4F36 !important;">
+Donald Trump
+</td>
+<td style="text-align:left;font-weight: bold;color: white !important;background-color: #3C4F36 !important;">
+07:37:00
+</td>
+<td style="text-align:left;font-weight: bold;color: white !important;background-color: #3C4F36 !important;">
+How are you doing? How are you?
+</td>
+<td style="text-align:right;font-weight: bold;color: white !important;background-color: #3C4F36 !important;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;font-weight: bold;color: white !important;background-color: #3C4F36 !important;">
+2
+</td>
+<td style="text-align:left;font-weight: bold;color: white !important;background-color: #3C4F36 !important;">
+Donald Trump
+</td>
+<td style="text-align:left;font-weight: bold;color: white !important;background-color: #3C4F36 !important;">
+09:04:00
+</td>
+<td style="text-align:left;font-weight: bold;color: white !important;background-color: #3C4F36 !important;">
+So as you know, 2.2 million people modeled out, were expected to die. We closed up the greatest economy in the world in order to fight this horrible disease that came from China. It’s a worldwide pandemic. It’s all over the world. You see the spikes in Europe and many other places right now. If you notice, the mortality rate is down 85%. The excess mortality rate is way down and much lower than almost any other country. And we’re fighting it and we’re fighting it hard. There is a spike. There was a spike in Florida and it’s now gone.
+</td>
+<td style="text-align:right;font-weight: bold;color: white !important;background-color: #3C4F36 !important;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;font-weight: bold;color: white !important;background-color: #3C4F36 !important;">
+3
+</td>
+<td style="text-align:left;font-weight: bold;color: white !important;background-color: #3C4F36 !important;">
+Donald Trump
+</td>
+<td style="text-align:left;font-weight: bold;color: white !important;background-color: #3C4F36 !important;">
+09:41:00
+</td>
+<td style="text-align:left;font-weight: bold;color: white !important;background-color: #3C4F36 !important;">
+There was a very big spike in Texas. It’s now gone. There was a very big spike in Arizona. It’s now gone. And there was some spikes and surges and other places, they will soon be gone. We have a vaccine that’s coming. It’s ready. It’s going to be announced within weeks. And it’s going to be delivered. We have Operation Warp Speed, which is the military is going to distribute the vaccine.
+</td>
+<td style="text-align:right;font-weight: bold;color: white !important;background-color: #3C4F36 !important;">
+0
+</td>
+</tr>
+</tbody>
+</table>
+<p>Wordcloud SZN, my fav :)</p>
+<pre class="r"><code>Wordcloud &lt;- debate %&gt;% 
+            unnest_tokens(word,text) %&gt;%
+            anti_join(stop_words) %&gt;%
+            filter(!word %in%c(&quot;00&quot;, &quot;that’s&quot;, &quot;i’m&quot;, &quot;it’s&quot;, &quot;we’re&quot;, &quot;he’s&quot;)) %&gt;%
+            group_by(word) %&gt;%
+            summarise(n=n()) %&gt;%
+            arrange(desc(n)) %&gt;%
+            top_n(100,n) %&gt;% 
+            wordcloud2()
+
+Wordcloud</code></pre>
+<div id="htmlwidget-1" style="width:672px;height:480px;" class="wordcloud2 html-widget"></div>
+<script type="application/json" data-for="htmlwidget-1">{"x":{"word":["people","don’t","president","they’re","china","money","you’re","didn’t","joe","country","time","million","talking","lot","plan","russia","what’s","can’t","businesses","millions","black","crosstalk","dollars","excuse","fracking","talk","we’ve","american","deal","healthcare","run","there’s","world","ago","closed","i’ve","industry","obama","oil","pay","street","coming","guy","paying","united","vice","billion","doesn’t","happening","jobs","person","true","family","insurance","matter","single","social","wall","cages","energy","existing","happened","i’d","north","pennsylvania","statement","tax","10","built","business","close","countries","dangerous","guess","korea","live","love","months","obamacare","option","schools","told","worry","york","abraham","america","bad","called","care","democrats","drug","dying","economy","families","including","job","kristen","law","lincoln","opportunity","parents","period","pre","protect","question","ran","reform","relationship","release","remember","respond","security"],"freq":[89,60,48,45,42,42,42,34,32,30,28,25,24,23,22,22,22,20,18,18,16,16,16,16,16,16,16,15,15,15,15,15,15,14,14,14,14,14,14,14,14,13,13,13,13,13,12,12,12,12,12,12,11,11,11,11,11,11,10,10,10,10,10,10,10,10,10,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],"fontFamily":"Segoe UI","fontWeight":"bold","color":"random-dark","minSize":0,"weightFactor":2.02247191011236,"backgroundColor":"white","gridSize":0,"minRotation":-0.785398163397448,"maxRotation":0.785398163397448,"shuffle":true,"rotateRatio":0.4,"shape":"circle","ellipticity":0.65,"figBase64":null,"hover":null},"evals":[],"jsHooks":[]}</script>
+<pre class="r"><code>debate %&gt;%  unnest_tokens(word,text) %&gt;%
+            anti_join(stop_words) %&gt;%
+            filter(!word %in%c(&quot;00&quot;, &quot;that’s&quot;, &quot;i’m&quot;, &quot;it’s&quot;, &quot;we’re&quot;, &quot;he’s&quot; )) %&gt;%
+            group_by(word) %&gt;%
+            summarise(n=n()) %&gt;%
+            arrange(desc(n)) %&gt;%
+            top_n(15,n) %&gt;%
+            ggplot(aes(x=fct_reorder(word,n), y=n)) + geom_col(stat = &quot;identity&quot;) + coord_flip() +
+            geom_text(aes(label = n), position = position_dodge(0.5), hjust = 0) + 
+            labs (x= &quot;Word&quot;, y= &quot;Word Count&quot;)</code></pre>
+<p><img src="/post/2020-10-30-second-presidential-debate-analysis_files/figure-html/unnamed-chunk-6-1.png" width="672" />
+The only context word here us people, we really cant make much sense from “that’s”, “don’t” and “they’re”. I think a bi-gram analysis of the words will be more useful here. Then lets try to chart the words.</p>
+<pre class="r"><code>bigram_freq &lt;- debate %&gt;%
+               unnest_tokens(bigram, text, 
+                   token = &quot;ngrams&quot;, n = 2) %&gt;%
+               separate(bigram, c(&quot;word1&quot;, &quot;word2&quot;), sep = &quot; &quot;) %&gt;%
+               filter(!word1 %in% stop_words$word) %&gt;%
+               filter(!word2 %in% stop_words$word) %&gt;%
+               filter(!word1 %in% c( )) %&gt;%
+               filter(!word2 %in% c( )) %&gt;%
+               filter(!str_detect(word1,&quot;null&quot;)) %&gt;% 
+               filter(!str_detect(word2,&quot;null&quot;))%&gt;%
+               filter(!str_detect(word1,&quot;^\\d&quot;)) %&gt;% 
+               filter(!str_detect(word2,&quot;^\\d&quot;))%&gt;%
+               mutate(bigram = str_c( word1, word2, sep = &quot; &quot;)) %&gt;%
+               count(bigram, word1, word2, sort=TRUE) 
+
+top_100 &lt;- bigram_freq %&gt;%
+           select(bigram,n) %&gt;%
+           arrange(desc(n)) %&gt;%
+           top_n(100,n) 
+top_100 %&gt;% wordcloud2()</code></pre>
+<div id="htmlwidget-2" style="width:672px;height:480px;" class="wordcloud2 html-widget"></div>
+<script type="application/json" data-for="htmlwidget-2">{"x":{"word":["vice president","wall street","what’s happening","abraham lincoln","north korea","oil industry","pre existing","don’t worry","social security","american people","million people","crime bill","criminal justice","existing conditions","he’s talking","justice reform","nancy pelosi","public option","socialized medicine","we’re talking","barack obama","black community","hundred trillion","i’d love","individual mandate","opportunity zones","private insurance","russia russia","stock market","that’s what’s","trillion dollars","affordable healthcare","bank account","bernie sanders","black colleges","carbon emission","dark winter","donald trump","drug prices","fracking we’re","he’s running","health insurance","joe biden","let’s talk","minimum wage","paris accord","people don’t","people recover","period period","president obama","prison reform","racist person","short period","single solitary","steel industry","tax return","wear masks","american president","american sovereignty","americans dead","bad people","badly run","bed tonight","biggest statement","black lives","built cages","cages joe","can’t close","chemical plants","china it’s","china’s fault","cleanest air","corrupt politician","create millions","democrat cities","don’t leak","don’t understand","don’t wear","drug courts","energy independent","energy saving","england medical","enormous opportunities","exact words","fastest growing","federal land","federal prison","federal subsidies","foreign countries","fumes coming","future lies","ghost town","he’s ready","historically black","hurt social","i’m elected","i’m immune","i’m running","including anthony","incredible job","insurance companies","it’s called","it’s china’s","it’s criminal","it’s dangerous","kitchen table","lives matter","lower premiums","medical journal","middle class","million existing","million jobs","million plans","minimum mandatories","months ago","mortality rate","north carolina","option he’s","pelosi doesn’t","pennsylvania oklahoma","people cartels","people’s sentences","police pigs","protect people","protect pre","rapid testing","republican friends","rudy giuliani","saving hundreds","short time","social distancing","stop fracking","taking care","tax returns","term funding","they’re concerned","they’re dying","they’re interfering","thousand deaths","time ago","total disaster","typical politician","ventilation systems","we’re fighting","we’re learning","we’re rounding","we’ve learned","what’s happened","white house","worry it’s","you’re paying"],"freq":[13,10,10,8,8,8,8,7,7,6,6,5,5,5,5,5,5,5,5,5,4,4,4,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2],"fontFamily":"Segoe UI","fontWeight":"bold","color":"random-dark","minSize":0,"weightFactor":13.8461538461538,"backgroundColor":"white","gridSize":0,"minRotation":-0.785398163397448,"maxRotation":0.785398163397448,"shuffle":true,"rotateRatio":0.4,"shape":"circle","ellipticity":0.65,"figBase64":null,"hover":null},"evals":[],"jsHooks":[]}</script>
+<p>A couple of things with context here, they discussed the American people, oil industry, wall street and President Barack Obama. Now lets try to chart the bi-grams by each of the candidates.</p>
+<p>Let’s move on to sentiment analysis, last time I did this for the first debate someone suggested that I should include more sentiments other than just positive and negative. So I added eight other sentiments to track over the course of the debate and then break these down by each of the candidates.</p>
+<pre class="r"><code>debate_nrc_sentiment &lt;- debate %&gt;%
+                        unnest_tokens(word,text ) %&gt;% 
+                        inner_join(get_sentiments(&quot;nrc&quot;)) </code></pre>
+<pre class="r"><code>Sentiment_split &lt;- debate_nrc_sentiment %&gt;% 
+                   count(word,sentiment) %&gt;%
+                   group_by(sentiment) %&gt;%
+                   arrange(desc(n)) %&gt;%
+                   slice(1:5) %&gt;% 
+                   ggplot(aes(x=reorder(word, n), y=n)) +
+                   geom_col(aes(fill=sentiment), show.legend = F) +
+                   facet_wrap(~sentiment, scales = &quot;free_y&quot;) +
+                   theme(axis.text.x = element_text(angle=45, hjust=1)) +
+                   coord_flip() +
+                   theme_bw() +
+                   labs(x=&quot;Word&quot;, y=&quot;Count&quot;, title=&quot;Sentiment by most frequent words&quot;) 
+
+Sentiment_split</code></pre>
+<p><img src="/post/2020-10-30-second-presidential-debate-analysis_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
+<p>Now lets track the sentiment over the duration of the debate.</p>
+<pre class="r"><code>Overall_Sentiment &lt;- debate_nrc_sentiment %&gt;% 
+                     count(time_periods,sentiment) %&gt;%
+                     ggplot(aes(time_periods,n,color = sentiment)) +
+                     geom_line()+
+                     geom_point() +
+                     labs(title = &quot;Sentiment of the debate over time&quot;) +
+                     facet_wrap(~sentiment,nrow = 2) +
+                     scale_color_tableau() +
+                     theme_fivethirtyeight()+
+                     theme(text =element_text(size = 12), legend.position = &quot;none&quot;)
+Overall_Sentiment</code></pre>
+<p><img src="/post/2020-10-30-second-presidential-debate-analysis_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
+<p>Now let’s track sentiment for each of the candidate, first lets try to do this for President Trump.</p>
+<pre class="r"><code>Trump_Sentiment &lt;- debate_nrc_sentiment %&gt;% 
+                   filter(speaker == &quot;Donald Trump&quot;) %&gt;% 
+                   count(time_periods,sentiment) %&gt;% 
+                   ggplot(aes(time_periods,n,color = sentiment)) +
+                   geom_line()+
+                   geom_point() +
+                   labs(title = &quot;Sentiment of the debate over time: President Donald Trump&quot;) +
+                   facet_wrap(~sentiment,nrow = 2) +
+                   scale_color_tableau() +
+                   theme_fivethirtyeight()+
+                   theme(text =element_text(size = 10), legend.position = &quot;none&quot;)
+
+Trump_Sentiment</code></pre>
+<p><img src="/post/2020-10-30-second-presidential-debate-analysis_files/figure-html/unnamed-chunk-11-1.png" width="672" /></p>
+<p>Now lets try to do the same for Vice President Joe Biden.</p>
+<pre class="r"><code>Biden_Sentiment &lt;- debate_nrc_sentiment %&gt;% 
+                   filter(speaker == &quot;Joe Biden&quot;) %&gt;% 
+                   count(time_periods,sentiment) %&gt;% 
+                   ggplot(aes(time_periods,n,color = sentiment)) +
+                   geom_line()+
+                   geom_point() +
+                   labs(title = &quot;Sentiment of the debate over time: Vice President Joe Biden&quot;) +
+                   facet_wrap(~sentiment,nrow = 2) +
+                   scale_color_tableau() +
+                   theme_fivethirtyeight()+
+                   theme(text =element_text(size = 10), legend.position = &quot;none&quot;)
+
+Biden_Sentiment</code></pre>
+<p><img src="/post/2020-10-30-second-presidential-debate-analysis_files/figure-html/unnamed-chunk-12-1.png" width="672" /></p>
+<p>Overall this is the first time I tried to incorporate the NRC sentiment and added more sentiments to the analyis,I hope this provides some insights to the debate. This will be my last politcal post I really enjoyed working with the debate data and learned some new NLP techniques in R. I am also learning Python and will try to add some more things using python in the blog as well!</p>
