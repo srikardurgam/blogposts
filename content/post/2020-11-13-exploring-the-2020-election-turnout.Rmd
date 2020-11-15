@@ -98,7 +98,7 @@ Some of my Texas peeps, might not like what I am showing. Sorry Dave, I cant mak
 
 ```{r message=FALSE, warning=FALSE}
 voter_all %>% select(year, state, VEP_turnout) %>% 
-              filter((state %in% c("Minnesota","Maine","Iowa","Georgia", "Texas"))) %>%
+              filter((state %in% c("Minnesota","Maine","Iowa","Georgia"))) %>%
               ggplot(aes(x=year, y=VEP_turnout, group=state, color=state))+
               geom_line() + 
               scale_color_tableau() +
@@ -111,7 +111,7 @@ Yikes! lot of missing data, lets try to filter out the election years and see if
 
 ```{r message=FALSE, warning=FALSE}
 voter_all %>% select(year, state, VEP_turnout) %>% 
-              filter((state %in% c("Minnesota","Maine","Iowa","Georgia", "Texas"))) %>%
+              filter((state %in% c("Minnesota","Maine","Iowa","Georgia"))) %>%
               filter(year %in% c(2016,2012,2008,2004,2000,1996,1992)) %>%
               ggplot(aes(x=year, y=VEP_turnout, group=state, color=state))+
               geom_line() + 

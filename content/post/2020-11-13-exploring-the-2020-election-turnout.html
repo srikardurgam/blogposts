@@ -89,7 +89,7 @@ colnames(election__all)</code></pre>
 <p><img src="/post/2020-11-13-exploring-the-2020-election-turnout_files/figure-html/unnamed-chunk-9-1.png" width="960" /></p>
 <p>Some of my Texas peeps, might not like what I am showing. Sorry Dave, I cant make the data look good when it is bad lol!. But this is fun and all but lets try to animate some of these states. When we see a decling that probaby because it is senate election and not a presidential election. Please note the above data is only from 1980 to 2014.</p>
 <pre class="r"><code>voter_all %&gt;% select(year, state, VEP_turnout) %&gt;% 
-              filter((state %in% c(&quot;Minnesota&quot;,&quot;Maine&quot;,&quot;Iowa&quot;,&quot;Georgia&quot;, &quot;Texas&quot;))) %&gt;%
+              filter((state %in% c(&quot;Minnesota&quot;,&quot;Maine&quot;,&quot;Iowa&quot;,&quot;Georgia&quot;))) %&gt;%
               ggplot(aes(x=year, y=VEP_turnout, group=state, color=state))+
               geom_line() + 
               scale_color_tableau() +
@@ -98,7 +98,7 @@ colnames(election__all)</code></pre>
 <p><img src="/post/2020-11-13-exploring-the-2020-election-turnout_files/figure-html/unnamed-chunk-10-1.gif" /><!-- --></p>
 <p>Yikes! lot of missing data, lets try to filter out the election years and see if that is any better.</p>
 <pre class="r"><code>voter_all %&gt;% select(year, state, VEP_turnout) %&gt;% 
-              filter((state %in% c(&quot;Minnesota&quot;,&quot;Maine&quot;,&quot;Iowa&quot;,&quot;Georgia&quot;, &quot;Texas&quot;))) %&gt;%
+              filter((state %in% c(&quot;Minnesota&quot;,&quot;Maine&quot;,&quot;Iowa&quot;,&quot;Georgia&quot;))) %&gt;%
               filter(year %in% c(2016,2012,2008,2004,2000,1996,1992)) %&gt;%
               ggplot(aes(x=year, y=VEP_turnout, group=state, color=state))+
               geom_line() + 
