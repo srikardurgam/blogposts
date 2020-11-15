@@ -109,7 +109,7 @@ voter_all %>% select(year, state, VEP_turnout) %>%
 
 Yikes! lot of missing data, lets try to filter out the election years and see if that is any better. 
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 voter_all %>% select(year, state, VEP_turnout) %>% 
               filter((state %in% c("Minnesota","Maine","Iowa","Georgia", "Texas"))) %>%
               filter(year %in% c(2016,2012,2008,2004,2000,1996,1992)) %>%
