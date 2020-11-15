@@ -3,8 +3,18 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   
   <url>
+    <loc>/post/exploring-the-2020-election-turnout/</loc>
+    <lastmod>2020-11-13T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
     <loc>/post/</loc>
-    <lastmod>2020-10-30T00:00:00+00:00</lastmod>
+    <lastmod>2020-11-13T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/</loc>
+    <lastmod>2020-11-13T00:00:00+00:00</lastmod>
   </url>
   
   <url>
@@ -13,27 +23,12 @@
   </url>
   
   <url>
-    <loc>/</loc>
-    <lastmod>2020-10-30T00:00:00+00:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>/tags/covid/</loc>
-    <lastmod>2020-10-21T00:00:00+00:00</lastmod>
+    <loc>/post/analyzing-president-trump-s-tweets/</loc>
+    <lastmod>2020-10-17T00:00:00+00:00</lastmod>
   </url>
   
   <url>
     <loc>/tags/</loc>
-    <lastmod>2020-10-21T00:00:00+00:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>/post/visualizing-covid-19-data/</loc>
-    <lastmod>2020-10-21T00:00:00+00:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>/post/analyzing-president-trump-s-tweets/</loc>
     <lastmod>2020-10-17T00:00:00+00:00</lastmod>
   </url>
   

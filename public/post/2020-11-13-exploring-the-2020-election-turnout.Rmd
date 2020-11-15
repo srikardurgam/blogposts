@@ -1,0 +1,148 @@
+---
+title: Exploring the 2020 Election turnout
+author: Srikar Durgam
+date: '2020-11-13'
+slug: exploring-the-2020-election-turnout
+categories: []
+tags: []
+---
+
+Welcome back! It has been a while. I was swamped with midterms and could not find time to do a blogpost. This week I will analyze voter turnout in the UNited States. In 2020, USA has seen the highest voter turnout in history. I was not suprised by this however I wanted to look at some overperforming and underperforming states and analyze some trends over time. I will looking at the 2020 election first, please not during the time I am writing this post we are still counting votes here in the states but things stand pretty solid here and I feel comfortable making this post. 
+
+First lets look at the 2020 election, we load in our libraries and our dataset. 
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(ggplot2)
+library(readr)
+library(ggthemes)
+library(kableExtra)
+library(plotly)
+library(scales)
+library(hrbrthemes)
+library(viridis)
+library(gganimate)
+library(lubridate)
+```
+
+
+```{r message=FALSE, warning=FALSE}
+election_2020 <- readr::read_csv("C:/Users/srika/Documents/blogposts/content/post/government-vep-turnout/2020 November General Election - Turnout Rates.csv")
+election__all <- readr::read_csv("C:/Users/srika/Documents/blogposts/content/post/government-vep-turnout/1980-2014 November General Election - Turnout Rates.csv")
+
+```
+
+After loading in the dataset, I wanted to take a look at the column names, and see how things are characterized. 
+
+```{r}
+colnames(election_2020)
+```
+
+Yikes! not great naming convention eh! In comes the legendary janitor packages, when we call the clean_names fucntion from the janitor package, it does just that "clean names" (sorry lame joke, I know). It replaces all hyphen ("-") and spaces (" ") with underscores ("_") and removes all the capital letters and replaces them lower case letters! Lets run the fuction
+
+```{r}
+election_2020 <- janitor::clean_names(election_2020)
+colnames(election_2020)
+```
+```{r}
+election__all <- janitor::clean_names(election__all)
+colnames(election__all)
+```
+
+As we can see by a call of the functions all of our problems disapper. Wish it worked like this in real life.
+
+Now let's calculate voter turnout. First we take total ballots counted and divide it by total eligible voting population. The we chart it. As we can see MN, ME, IA, CO and WI have the best voter turnout and states like TX, TN, HI, WV, AR and OK have the worst turnout. 
+
+```{r}
+voter_turnout <- election_2020 %>%
+                 select(state_abv, total_ballots_counted_estimate, voting_eligible_population_vep) %>%
+                 mutate(VEP_turnout = round(total_ballots_counted_estimate/voting_eligible_population_vep,3)) %>%
+                 arrange(desc(VEP_turnout))
+```
+```{r fig.height=14, fig.width=12, message=FALSE, warning=FALSE}
+voter_turnout %>% ggplot(aes(x=fct_reorder(state_abv,VEP_turnout), y=VEP_turnout)) +
+                  geom_col(stat="identity", alpha=.6, width=.8) +
+                  ylim(0,1) +
+                  scale_y_continuous(labels = scales::percent, expand = c(0,0.002)) +
+                  coord_flip() +
+                  xlab("State") +
+                  ylab("% Voter Turnout") +
+                  theme_bw()  + 
+                  theme(axis.text.x = element_text(colour="grey40", size=12, angle=90, hjust=.5, vjust=.5),
+                  axis.text.y = element_text(colour="grey40", size=12)) 
+```
+
+
+```{r}
+voter_all <- election__all %>%
+             filter(state != "United States") %>%
+             filter(state %in% c("Minnesota","Maine","Iowa", "Colorado", "Wisconsin","Texas",
+                                 "Georgia", "Hawaii", "West Virginia", "Arkansas", "Oklahoma")) %>%
+             select(year, state, total_ballots_counted, voting_eligible_population_vep) %>%
+             mutate(VEP_turnout = round(total_ballots_counted/voting_eligible_population_vep,3)) %>%
+             arrange(desc(year))
+```
+
+
+
+```{r fig.height=10, fig.width=10, message=FALSE, warning=FALSE}
+voter_all %>% select(year, state, VEP_turnout) %>% 
+              drop_na() %>%
+              ggplot(aes(x=year, y=VEP_turnout, group=state, color=state))+
+              geom_line() + 
+              scale_color_tableau() +
+              scale_y_continuous(labels = scales::percent) + theme_economist()
+```
+
+Some of my Texas peeps, might not like what I am showing. Sorry Dave, I cant make the data look good when it is bad lol!. But this is fun and all but lets try to animate some of these states. When we see a decling that probaby because it is senate election and not a presidential election. Please note the above data is only from 1980 to 2014. 
+
+```{r message=FALSE, warning=FALSE}
+voter_all %>% select(year, state, VEP_turnout) %>% 
+              filter((state %in% c("Minnesota","Maine","Iowa","Georgia", "Texas"))) %>%
+              ggplot(aes(x=year, y=VEP_turnout, group=state, color=state))+
+              geom_line() + 
+              scale_color_tableau() +
+              scale_y_continuous(labels = scales::percent) + theme_economist() +   
+              transition_reveal(year)
+
+```
+
+Yikes! lot of missing data, lets try to filter out the election years and see if that is any better. 
+
+```{r}
+voter_all %>% select(year, state, VEP_turnout) %>% 
+              filter((state %in% c("Minnesota","Maine","Iowa","Georgia", "Texas"))) %>%
+              filter(year %in% c(2016,2012,2008,2004,2000,1996,1992)) %>%
+              ggplot(aes(x=year, y=VEP_turnout, group=state, color=state))+
+              geom_line() + 
+              scale_color_tableau() +
+              
+              scale_y_continuous(labels = scales::percent) + theme_economist() +   
+              transition_reveal(year)
+```
+
+We still have a lot of missing data but this guves us an idea as to which states are decling and which states are increasing. In conclusion we can see that Minnesota has done a great job with voter turnout, I wish I had more data to play with on this subject. Next blogpost I will try to analyze voter turnout by age and race. Please note that I did not include any party affilation by design, this is my attempt to be bipartisan. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

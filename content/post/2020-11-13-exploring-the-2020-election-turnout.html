@@ -1,0 +1,305 @@
+---
+title: Exploring the 2020 Election turnout
+author: Srikar Durgam
+date: '2020-11-13'
+slug: exploring-the-2020-election-turnout
+categories: []
+tags: []
+---
+
+
+
+<p>Welcome back! It has been a while. I was swamped with midterms and could not find time to do a blogpost. This week I will analyze voter turnout in the UNited States. In 2020, USA has seen the highest voter turnout in history. I was not suprised by this however I wanted to look at some overperforming and underperforming states and analyze some trends over time. I will looking at the 2020 election first, please not during the time I am writing this post we are still counting votes here in the states but things stand pretty solid here and I feel comfortable making this post.</p>
+<p>First lets look at the 2020 election, we load in our libraries and our dataset.</p>
+<pre class="r"><code>library(tidyverse)
+library(ggplot2)
+library(readr)
+library(ggthemes)
+library(kableExtra)
+library(plotly)
+library(scales)
+library(hrbrthemes)
+library(viridis)
+library(gganimate)
+library(lubridate)</code></pre>
+<pre class="r"><code>election_2020 &lt;- readr::read_csv(&quot;C:/Users/srika/Documents/blogposts/content/post/government-vep-turnout/2020 November General Election - Turnout Rates.csv&quot;)
+election__all &lt;- readr::read_csv(&quot;C:/Users/srika/Documents/blogposts/content/post/government-vep-turnout/1980-2014 November General Election - Turnout Rates.csv&quot;)</code></pre>
+<p>After loading in the dataset, I wanted to take a look at the column names, and see how things are characterized.</p>
+<pre class="r"><code>colnames(election_2020)</code></pre>
+<pre><code>##  [1] &quot;State&quot;                               &quot;Source&quot;                             
+##  [3] &quot;Official/Unofficial&quot;                 &quot;Total Ballots Counted (Estimate)&quot;   
+##  [5] &quot;Vote for Highest Office (President)&quot; &quot;VEP Turnout Rate&quot;                   
+##  [7] &quot;Voting-Eligible Population (VEP)&quot;    &quot;Voting-Age Population (VAP)&quot;        
+##  [9] &quot;% Non-citizen&quot;                       &quot;Prison&quot;                             
+## [11] &quot;Probation&quot;                           &quot;Parole&quot;                             
+## [13] &quot;Total Ineligible Felon&quot;              &quot;Overseas Eligible&quot;                  
+## [15] &quot;State Abv&quot;</code></pre>
+<p>Yikes! not great naming convention eh! In comes the legendary janitor packages, when we call the clean_names fucntion from the janitor package, it does just that “clean names” (sorry lame joke, I know). It replaces all hyphen (“-”) and spaces (" “) with underscores (”_") and removes all the capital letters and replaces them lower case letters! Lets run the fuction</p>
+<pre class="r"><code>election_2020 &lt;- janitor::clean_names(election_2020)
+colnames(election_2020)</code></pre>
+<pre><code>##  [1] &quot;state&quot;                             &quot;source&quot;                           
+##  [3] &quot;official_unofficial&quot;               &quot;total_ballots_counted_estimate&quot;   
+##  [5] &quot;vote_for_highest_office_president&quot; &quot;vep_turnout_rate&quot;                 
+##  [7] &quot;voting_eligible_population_vep&quot;    &quot;voting_age_population_vap&quot;        
+##  [9] &quot;percent_non_citizen&quot;               &quot;prison&quot;                           
+## [11] &quot;probation&quot;                         &quot;parole&quot;                           
+## [13] &quot;total_ineligible_felon&quot;            &quot;overseas_eligible&quot;                
+## [15] &quot;state_abv&quot;</code></pre>
+<pre class="r"><code>election__all &lt;- janitor::clean_names(election__all)
+colnames(election__all)</code></pre>
+<pre><code>##  [1] &quot;year&quot;                           &quot;icpsr_state_code&quot;              
+##  [3] &quot;alphanumeric_state_code&quot;        &quot;state&quot;                         
+##  [5] &quot;vep_total_ballots_counted&quot;      &quot;vep_highest_office&quot;            
+##  [7] &quot;vap_highest_office&quot;             &quot;total_ballots_counted&quot;         
+##  [9] &quot;highest_office&quot;                 &quot;voting_eligible_population_vep&quot;
+## [11] &quot;voting_age_population_vap&quot;      &quot;percent_non_citizen&quot;           
+## [13] &quot;prison&quot;                         &quot;probation&quot;                     
+## [15] &quot;parole&quot;                         &quot;total_ineligible_felon&quot;        
+## [17] &quot;overseas_eligible&quot;</code></pre>
+<p>As we can see by a call of the functions all of our problems disapper. Wish it worked like this in real life.</p>
+<p>Now let’s calculate voter turnout. First we take total ballots counted and divide it by total eligible voting population. The we chart it. As we can see MN, ME, IA, CO and WI have the best voter turnout and states like TX, TN, HI, WV, AR and OK have the worst turnout.</p>
+<pre class="r"><code>voter_turnout &lt;- election_2020 %&gt;%
+                 select(state_abv, total_ballots_counted_estimate, voting_eligible_population_vep) %&gt;%
+                 mutate(VEP_turnout = round(total_ballots_counted_estimate/voting_eligible_population_vep,3)) %&gt;%
+                 arrange(desc(VEP_turnout))</code></pre>
+<pre class="r"><code>voter_turnout %&gt;% ggplot(aes(x=fct_reorder(state_abv,VEP_turnout), y=VEP_turnout)) +
+                  geom_col(stat=&quot;identity&quot;, alpha=.6, width=.8) +
+                  ylim(0,1) +
+                  scale_y_continuous(labels = scales::percent, expand = c(0,0.002)) +
+                  coord_flip() +
+                  xlab(&quot;State&quot;) +
+                  ylab(&quot;% Voter Turnout&quot;) +
+                  theme_bw()  + 
+                  theme(axis.text.x = element_text(colour=&quot;grey40&quot;, size=12, angle=90, hjust=.5, vjust=.5),
+                  axis.text.y = element_text(colour=&quot;grey40&quot;, size=12)) </code></pre>
+<p><img src="/post/2020-11-13-exploring-the-2020-election-turnout_files/figure-html/unnamed-chunk-7-1.png" width="1152" /></p>
+<pre class="r"><code>voter_all &lt;- election__all %&gt;%
+             filter(state != &quot;United States&quot;) %&gt;%
+             filter(state %in% c(&quot;Minnesota&quot;,&quot;Maine&quot;,&quot;Iowa&quot;, &quot;Colorado&quot;, &quot;Wisconsin&quot;,&quot;Texas&quot;,
+                                 &quot;Georgia&quot;, &quot;Hawaii&quot;, &quot;West Virginia&quot;, &quot;Arkansas&quot;, &quot;Oklahoma&quot;)) %&gt;%
+             select(year, state, total_ballots_counted, voting_eligible_population_vep) %&gt;%
+             mutate(VEP_turnout = round(total_ballots_counted/voting_eligible_population_vep,3)) %&gt;%
+             arrange(desc(year))</code></pre>
+<pre class="r"><code>voter_all %&gt;% select(year, state, VEP_turnout) %&gt;% 
+              drop_na() %&gt;%
+              ggplot(aes(x=year, y=VEP_turnout, group=state, color=state))+
+              geom_line() + 
+              scale_color_tableau() +
+              scale_y_continuous(labels = scales::percent) + theme_economist()</code></pre>
+<p><img src="/post/2020-11-13-exploring-the-2020-election-turnout_files/figure-html/unnamed-chunk-9-1.png" width="960" /></p>
+<p>Some of my Texas peeps, might not like what I am showing. Sorry Dave, I cant make the data look good when it is bad lol!. But this is fun and all but lets try to animate some of these states. When we see a decling that probaby because it is senate election and not a presidential election. Please note the above data is only from 1980 to 2014.</p>
+<pre class="r"><code>voter_all %&gt;% select(year, state, VEP_turnout) %&gt;% 
+              filter((state %in% c(&quot;Minnesota&quot;,&quot;Maine&quot;,&quot;Iowa&quot;,&quot;Georgia&quot;, &quot;Texas&quot;))) %&gt;%
+              ggplot(aes(x=year, y=VEP_turnout, group=state, color=state))+
+              geom_line() + 
+              scale_color_tableau() +
+              scale_y_continuous(labels = scales::percent) + theme_economist() +   
+              transition_reveal(year)</code></pre>
+<p><img src="/post/2020-11-13-exploring-the-2020-election-turnout_files/figure-html/unnamed-chunk-10-1.gif" /><!-- --></p>
+<p>Yikes! lot of missing data, lets try to filter out the election years and see if that is any better.</p>
+<pre class="r"><code>voter_all %&gt;% select(year, state, VEP_turnout) %&gt;% 
+              filter((state %in% c(&quot;Minnesota&quot;,&quot;Maine&quot;,&quot;Iowa&quot;,&quot;Georgia&quot;, &quot;Texas&quot;))) %&gt;%
+              filter(year %in% c(2016,2012,2008,2004,2000,1996,1992)) %&gt;%
+              ggplot(aes(x=year, y=VEP_turnout, group=state, color=state))+
+              geom_line() + 
+              scale_color_tableau() +
+              
+              scale_y_continuous(labels = scales::percent) + theme_economist() +   
+              transition_reveal(year)</code></pre>
+<pre><code>## Warning: Removed 6 row(s) containing missing values (geom_path).
+
+## Warning: Removed 6 row(s) containing missing values (geom_path).
+
+## Warning: Removed 6 row(s) containing missing values (geom_path).
+
+## Warning: Removed 6 row(s) containing missing values (geom_path).
+
+## Warning: Removed 6 row(s) containing missing values (geom_path).
+
+## Warning: Removed 6 row(s) containing missing values (geom_path).
+
+## Warning: Removed 6 row(s) containing missing values (geom_path).
+
+## Warning: Removed 6 row(s) containing missing values (geom_path).
+
+## Warning: Removed 6 row(s) containing missing values (geom_path).
+
+## Warning: Removed 6 row(s) containing missing values (geom_path).
+
+## Warning: Removed 6 row(s) containing missing values (geom_path).
+
+## Warning: Removed 6 row(s) containing missing values (geom_path).
+
+## Warning: Removed 6 row(s) containing missing values (geom_path).
+
+## Warning: Removed 6 row(s) containing missing values (geom_path).
+
+## Warning: Removed 6 row(s) containing missing values (geom_path).
+
+## Warning: Removed 6 row(s) containing missing values (geom_path).
+
+## Warning: Removed 6 row(s) containing missing values (geom_path).</code></pre>
+<pre><code>## Warning: Removed 8 row(s) containing missing values (geom_path).
+
+## Warning: Removed 8 row(s) containing missing values (geom_path).
+
+## Warning: Removed 8 row(s) containing missing values (geom_path).
+
+## Warning: Removed 8 row(s) containing missing values (geom_path).
+
+## Warning: Removed 8 row(s) containing missing values (geom_path).
+
+## Warning: Removed 8 row(s) containing missing values (geom_path).
+
+## Warning: Removed 8 row(s) containing missing values (geom_path).
+
+## Warning: Removed 8 row(s) containing missing values (geom_path).
+
+## Warning: Removed 8 row(s) containing missing values (geom_path).
+
+## Warning: Removed 8 row(s) containing missing values (geom_path).
+
+## Warning: Removed 8 row(s) containing missing values (geom_path).
+
+## Warning: Removed 8 row(s) containing missing values (geom_path).
+
+## Warning: Removed 8 row(s) containing missing values (geom_path).
+
+## Warning: Removed 8 row(s) containing missing values (geom_path).
+
+## Warning: Removed 8 row(s) containing missing values (geom_path).
+
+## Warning: Removed 8 row(s) containing missing values (geom_path).
+
+## Warning: Removed 8 row(s) containing missing values (geom_path).</code></pre>
+<pre><code>## Warning: Removed 10 row(s) containing missing values (geom_path).
+
+## Warning: Removed 10 row(s) containing missing values (geom_path).
+
+## Warning: Removed 10 row(s) containing missing values (geom_path).
+
+## Warning: Removed 10 row(s) containing missing values (geom_path).
+
+## Warning: Removed 10 row(s) containing missing values (geom_path).
+
+## Warning: Removed 10 row(s) containing missing values (geom_path).
+
+## Warning: Removed 10 row(s) containing missing values (geom_path).
+
+## Warning: Removed 10 row(s) containing missing values (geom_path).
+
+## Warning: Removed 10 row(s) containing missing values (geom_path).
+
+## Warning: Removed 10 row(s) containing missing values (geom_path).
+
+## Warning: Removed 10 row(s) containing missing values (geom_path).
+
+## Warning: Removed 10 row(s) containing missing values (geom_path).
+
+## Warning: Removed 10 row(s) containing missing values (geom_path).
+
+## Warning: Removed 10 row(s) containing missing values (geom_path).
+
+## Warning: Removed 10 row(s) containing missing values (geom_path).
+
+## Warning: Removed 10 row(s) containing missing values (geom_path).
+
+## Warning: Removed 10 row(s) containing missing values (geom_path).</code></pre>
+<pre><code>## Warning: Removed 8 row(s) containing missing values (geom_path).
+
+## Warning: Removed 8 row(s) containing missing values (geom_path).
+
+## Warning: Removed 8 row(s) containing missing values (geom_path).
+
+## Warning: Removed 8 row(s) containing missing values (geom_path).
+
+## Warning: Removed 8 row(s) containing missing values (geom_path).
+
+## Warning: Removed 8 row(s) containing missing values (geom_path).
+
+## Warning: Removed 8 row(s) containing missing values (geom_path).
+
+## Warning: Removed 8 row(s) containing missing values (geom_path).
+
+## Warning: Removed 8 row(s) containing missing values (geom_path).
+
+## Warning: Removed 8 row(s) containing missing values (geom_path).
+
+## Warning: Removed 8 row(s) containing missing values (geom_path).
+
+## Warning: Removed 8 row(s) containing missing values (geom_path).
+
+## Warning: Removed 8 row(s) containing missing values (geom_path).
+
+## Warning: Removed 8 row(s) containing missing values (geom_path).
+
+## Warning: Removed 8 row(s) containing missing values (geom_path).
+
+## Warning: Removed 8 row(s) containing missing values (geom_path).</code></pre>
+<pre><code>## Warning: Removed 9 row(s) containing missing values (geom_path).
+
+## Warning: Removed 9 row(s) containing missing values (geom_path).
+
+## Warning: Removed 9 row(s) containing missing values (geom_path).
+
+## Warning: Removed 9 row(s) containing missing values (geom_path).
+
+## Warning: Removed 9 row(s) containing missing values (geom_path).
+
+## Warning: Removed 9 row(s) containing missing values (geom_path).
+
+## Warning: Removed 9 row(s) containing missing values (geom_path).
+
+## Warning: Removed 9 row(s) containing missing values (geom_path).
+
+## Warning: Removed 9 row(s) containing missing values (geom_path).
+
+## Warning: Removed 9 row(s) containing missing values (geom_path).
+
+## Warning: Removed 9 row(s) containing missing values (geom_path).
+
+## Warning: Removed 9 row(s) containing missing values (geom_path).
+
+## Warning: Removed 9 row(s) containing missing values (geom_path).
+
+## Warning: Removed 9 row(s) containing missing values (geom_path).
+
+## Warning: Removed 9 row(s) containing missing values (geom_path).
+
+## Warning: Removed 9 row(s) containing missing values (geom_path).</code></pre>
+<pre><code>## Warning: Removed 10 row(s) containing missing values (geom_path).
+
+## Warning: Removed 10 row(s) containing missing values (geom_path).
+
+## Warning: Removed 10 row(s) containing missing values (geom_path).
+
+## Warning: Removed 10 row(s) containing missing values (geom_path).
+
+## Warning: Removed 10 row(s) containing missing values (geom_path).
+
+## Warning: Removed 10 row(s) containing missing values (geom_path).
+
+## Warning: Removed 10 row(s) containing missing values (geom_path).
+
+## Warning: Removed 10 row(s) containing missing values (geom_path).
+
+## Warning: Removed 10 row(s) containing missing values (geom_path).
+
+## Warning: Removed 10 row(s) containing missing values (geom_path).
+
+## Warning: Removed 10 row(s) containing missing values (geom_path).
+
+## Warning: Removed 10 row(s) containing missing values (geom_path).
+
+## Warning: Removed 10 row(s) containing missing values (geom_path).
+
+## Warning: Removed 10 row(s) containing missing values (geom_path).
+
+## Warning: Removed 10 row(s) containing missing values (geom_path).
+
+## Warning: Removed 10 row(s) containing missing values (geom_path).
+
+## Warning: Removed 10 row(s) containing missing values (geom_path).</code></pre>
+<pre><code>## Warning: Removed 6 row(s) containing missing values (geom_path).</code></pre>
+<p><img src="/post/2020-11-13-exploring-the-2020-election-turnout_files/figure-html/unnamed-chunk-11-1.gif" /><!-- --></p>
+<p>We still have a lot of missing data but this guves us an idea as to which states are decling and which states are increasing. In conclusion we can see that Minnesota has done a great job with voter turnout, I wish I had more data to play with on this subject. Next blogpost I will try to analyze voter turnout by age and race. Please note that I did not include any party affilation by design, this is my attempt to be bipartisan.</p>

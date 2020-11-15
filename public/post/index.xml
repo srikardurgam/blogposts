@@ -5,7 +5,16 @@
     <link>/post/</link>
     <description>Recent content in Posts on Srikar Durgam</description>
     <generator>Hugo -- gohugo.io</generator>
-    <lastBuildDate>Fri, 30 Oct 2020 00:00:00 +0000</lastBuildDate><atom:link href="/post/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 13 Nov 2020 00:00:00 +0000</lastBuildDate><atom:link href="/post/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Exploring the 2020 Election turnout</title>
+      <link>/post/exploring-the-2020-election-turnout/</link>
+      <pubDate>Fri, 13 Nov 2020 00:00:00 +0000</pubDate>
+      
+      <guid>/post/exploring-the-2020-election-turnout/</guid>
+      <description>Welcome back! It has been a while. I was swamped with midterms and could not find time to do a blogpost. This week I will analyze voter turnout in the UNited States. In 2020, USA has seen the highest voter turnout in history. I was not suprised by this however I wanted to look at some overperforming and underperforming states and analyze some trends over time. I will looking at the 2020 election first, please not during the time I am writing this post we are still counting votes here in the states but things stand pretty solid here and I feel comfortable making this post.</description>
+    </item>
+    
     <item>
       <title>Second Presidential Debate Analysis</title>
       <link>/post/second-presidential-debate-analysis/</link>
@@ -13,15 +22,6 @@
       
       <guid>/post/second-presidential-debate-analysis/</guid>
       <description>In this blogpost, I will try to recreate some of the same things I tried in the first blogpost, however this time I plan on using a different sentiment dictionary as well as try to include some bi-gram analysis. As always, a disclaimer: my goal here isn’t to sway you in one direction or another, but only to provide an analytical view to what the candidates are saying.</description>
-    </item>
-    
-    <item>
-      <title>Visualizing COVID-19 Data </title>
-      <link>/post/visualizing-covid-19-data/</link>
-      <pubDate>Wed, 21 Oct 2020 00:00:00 +0000</pubDate>
-      
-      <guid>/post/visualizing-covid-19-data/</guid>
-      <description>In this blogpost I will try to recreate some of the visualization I have been seeing on the internet. I want to thank Michael Clark for writing some of the functions I will be reusing here to recreate the visualizations.</description>
     </item>
     
     <item>

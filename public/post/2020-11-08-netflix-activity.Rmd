@@ -1,0 +1,9 @@
+---
+title: Netflix Activity
+author: Srikar Durgam
+date: '2020-11-08'
+slug: netflix-activity
+categories: []
+tags: []
+---
+
